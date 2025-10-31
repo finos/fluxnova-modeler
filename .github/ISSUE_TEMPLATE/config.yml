@@ -1,5 +1,5 @@
 blank_issues_enabled: false
 contact_links:
   - name: Ask a question
-    url: https://github.com/finos/fluxnova-bpm-platform/discussions
+    url: https://github.com/finos/fluxnova-modeler/discussions
     about: Head over to our community forum to ask questions and get answers.
