@@ -88,6 +88,12 @@ module.exports = function(karma) {
       module: {
         rules: [
           {
+            test: /\.mjs$/,
+            resolve: {
+              fullySpecified: false
+            }
+          },
+          {
             test: /\.bpmnlintrc$/,
             use: [
               'bpmnlint-loader'
@@ -105,7 +111,44 @@ module.exports = function(karma) {
                 use: 'react-svg-loader'
               },
               {
-                test: /\.(css|bpmn|cmmn|dmn|less|xml|png|svg|form|rpa)$/,
+                test: /\.css$/,
+                use: [
+                  'style-loader',
+                  {
+                    loader: 'css-loader',
+                    options: {
+                      modules: {
+                        localIdentName: '[path][name]__[local]--[hash:base64:5]'
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                test: /\.less$/,
+                use: [
+                  'style-loader',
+                  {
+                    loader: 'css-loader',
+                    options: {
+                      modules: {
+                        localIdentName: '[path][name]__[local]--[hash:base64:5]'
+                      }
+                    }
+                  },
+                  'less-loader'
+                ]
+              },
+              {
+                test: /\.(bpmn|cmmn|dmn|form|rpa)$/,
+                type: 'asset/source'
+              },
+              {
+                test: /\.(woff|woff2|eot|ttf|otf)$/,
+                type: 'asset/inline'
+              },
+              {
+                test: /\.(xml|png|svg)$/,
                 type: 'asset/source'
               }
             ]
@@ -132,6 +175,7 @@ module.exports = function(karma) {
           absoluteBasePath,
           resourcePath
         ],
+        fullySpecified: false,
         alias: {
           'bpmn-js/lib/Modeler': modelers ? 'bpmn-js/lib/Modeler' : 'test/mocks/bpmn-js/Modeler',
           'camunda-bpmn-js/lib/camunda-cloud/Modeler': modelers ? 'camunda-bpmn-js/lib/camunda-cloud/Modeler' : 'test/mocks/bpmn-js/Modeler',

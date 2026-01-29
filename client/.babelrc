@@ -7,7 +7,13 @@
         }
       }
     ],
-    "@babel/preset-react"
+    [
+      "@babel/preset-react",
+      {
+        "runtime": "automatic",
+        "importSource": "react"
+      }
+    ]
   ],
   "env": {
     "coverage": {

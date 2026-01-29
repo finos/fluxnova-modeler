@@ -37,16 +37,24 @@ export default class StartInstancePlugin extends PureComponent {
     };
 
     this._anchorRef = React.createRef();
+    this._isMounted = true;
   }
 
   componentDidMount() {
+    this._isMounted = true;
     this.props.subscribe('app.activeTabChanged', ({ activeTab }) => {
-      this.setState({
-        activeTab,
-        overlayState: null,
-        activeButton: false
-      });
+      if (this._isMounted) {
+        this.setState({
+          activeTab,
+          overlayState: null,
+          activeButton: false
+        });
+      }
     });
+  }
+
+  componentWillUnmount() {
+    this._isMounted = false;
   }
 
   async startInstance() {
@@ -59,7 +67,9 @@ export default class StartInstancePlugin extends PureComponent {
       return;
     }
 
-    this.setState({ activeButton: true });
+    if (this._isMounted) {
+      this.setState({ activeButton: true });
+    }
 
     // (2) get deploy configuration
 
@@ -68,7 +78,9 @@ export default class StartInstancePlugin extends PureComponent {
 
     // (2.1) user cancelled
     if (!deploymentConfig) {
-      this.setState({ activeButton: false });
+      if (this._isMounted) {
+        this.setState({ activeButton: false });
+      }
       return;
     }
 
@@ -78,7 +90,9 @@ export default class StartInstancePlugin extends PureComponent {
     const startConfiguration = await this.getSavedConfiguration(activeTab, 'start-process-instance');
 
     // (3.2) get configuration from user
-    this.setState({ activeButton: true });
+    if (this._isMounted) {
+      this.setState({ activeButton: true });
+    }
 
     const {
       action,
@@ -87,7 +101,9 @@ export default class StartInstancePlugin extends PureComponent {
 
     // (3.3) handle user cancellation
     if (action === 'cancel') {
-      this.setState({ activeButton: false });
+      if (this._isMounted) {
+        this.setState({ activeButton: false });
+      }
       return;
     }
 
@@ -102,23 +118,27 @@ export default class StartInstancePlugin extends PureComponent {
 
     return new Promise(resolve => {
       const onClose = (action, configuration) => {
-        this.setState({
-          overlayState: null,
-          activeButton: false
-        });
+        if (this._isMounted) {
+          this.setState({
+            overlayState: null,
+            activeButton: false
+          });
+        }
 
         // contract: if configuration provided, user closed with O.K.
         // otherwise they canceled it
         return resolve({ action, configuration });
       };
 
-      this.setState({
-        overlayState: {
-          isStart: true,
-          configuration,
-          onClose
-        }
-      });
+      if (this._isMounted) {
+        this.setState({
+          overlayState: {
+            isStart: true,
+            configuration,
+            onClose
+          }
+        });
+      }
     });
   }
 
@@ -133,10 +153,12 @@ export default class StartInstancePlugin extends PureComponent {
     }
 
     // (2) set status-bar button as inactive and close overlay
-    this.setState({
-      activeButton: false,
-      overlayState: null
-    });
+    if (this._isMounted) {
+      this.setState({
+        activeButton: false,
+        overlayState: null
+      });
+    }
 
     // (3) start process instance
     const {

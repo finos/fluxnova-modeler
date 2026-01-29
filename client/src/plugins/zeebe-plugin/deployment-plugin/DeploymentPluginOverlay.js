@@ -95,15 +95,18 @@ export default class DeploymentPluginOverlay extends React.PureComponent {
     };
 
     this.connectionChecker = validator.createConnectionChecker();
+    this._isMounted = true;
   }
 
   async componentDidMount() {
+    this._isMounted = true;
     this.connectionChecker.subscribe({
       onComplete: this.handleConnectionCheckResult
     });
   }
 
   componentWillUnmount() {
+    this._isMounted = false;
     this.connectionChecker.unsubscribe();
   }
 
@@ -176,10 +179,16 @@ export default class DeploymentPluginOverlay extends React.PureComponent {
 
     this.connectionChecker.check(endpoint);
 
-    this.setState({ configValues: formValues });
+    if (this._isMounted) {
+      this.setState({ configValues: formValues });
+    }
   };
 
   handleConnectionCheckResult = result => {
+    if (!this._isMounted) {
+      return;
+    }
+
     const { connectionResult, endpointErrors } = result;
 
     if (endpointErrors) {
@@ -197,7 +206,9 @@ export default class DeploymentPluginOverlay extends React.PureComponent {
   };
 
   setConnectionState(connectionState) {
-    this.setState({ connectionState });
+    if (this._isMounted) {
+      this.setState({ connectionState });
+    }
   }
 
   handleFormSubmit = async (values, { setSubmitting }) => {

@@ -42,9 +42,11 @@ export default class DeploymentConfigOverlay extends React.PureComponent {
     };
 
     this.valuesCache = { ...props.configuration };
+    this._isMounted = true;
   }
 
   componentDidMount = () => {
+    this._isMounted = true;
     const {
       subscribeToFocusChange,
       validator
@@ -60,7 +62,11 @@ export default class DeploymentConfigOverlay extends React.PureComponent {
   };
 
   componentWillUnmount = () => {
+    this._isMounted = false;
     this.props.unsubscribeFromFocusChange();
+    if (this._submitTimeoutId) {
+      clearTimeout(this._submitTimeoutId);
+    }
   };
 
   isConnectionError(code) {
@@ -140,6 +146,10 @@ export default class DeploymentConfigOverlay extends React.PureComponent {
     } = values;
 
     const connectionValidation = await this.props.validator.validateConnection(endpoint);
+
+    if (!this._isMounted) {
+      return;
+    }
 
     if (!hasKeys(connectionValidation)) {
 
@@ -418,8 +428,10 @@ export default class DeploymentConfigOverlay extends React.PureComponent {
                           // if you come up with a better solution, please
                           // do a PR.
                           this.isOnBeforeSubmit = true;
-                          setTimeout(() => {
-                            this.isOnBeforeSubmit = false;
+                          this._submitTimeoutId = setTimeout(() => {
+                            if (this._isMounted) {
+                              this.isOnBeforeSubmit = false;
+                            }
                           });
                         } }
                       >

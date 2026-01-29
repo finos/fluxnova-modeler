@@ -86,7 +86,7 @@ export default function TextInput(props) {
           error={ error }
         />
         { description &&
-          <p className="form-control">{ description }</p>
+          <small className="form-text text-muted">{ description }</small>
         }
       </div>
     </React.Fragment>
