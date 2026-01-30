@@ -109,6 +109,7 @@
     "puppeteer": "^24.0.0",
     "react-svg-loader": "^3.0.3",
     "react-test-renderer": "^16.14.0",
+    "shx": "^0.3.4",
     "sinon": "^17.0.1",
     "sinon-chai": "^3.7.0",
     "style-loader": "^4.0.0",
@@ -118,7 +119,7 @@
   "scripts": {
     "start": "cross-env NODE_ENV=development webpack --watch --config ./webpack.config.js",
     "build": "cross-env NODE_ENV=production webpack",
-    "postbuild": "del-cli --force ../app/public && mv build ../app/public",
+    "postbuild": "del-cli --force ../app/public && shx mv build ../app/public",
     "dev": "run-s start",
     "auto-test": "npm test -- --auto-watch --no-single-run",
     "test": "karma start karma.config.js",
