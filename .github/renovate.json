@@ -3,5 +3,11 @@
   "extends": [
     "config:best-practices",
     ":separateMultipleMajorReleases"
+  ],
+  "packageRules": [
+    {
+      "matchUpdateTypes": ["patch"],
+      "groupName": "all-patch-updates"
+    }
   ]
 }
