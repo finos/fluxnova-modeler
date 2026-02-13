@@ -81,7 +81,7 @@ export default class StartInstanceConfigOverlay extends React.PureComponent {
                         component={ TextInput }
                         multiline={ true }
                         label="Variables (optional)"
-                        description={ <p>Must be a proper <a href="https://www.w3schools.com/js/js_json_intro.asp">JSON string</a> representing <a href="https://docs.fluxnova.finos.org/manual/latest/reference/rest/process-definition/post-start-process-instance/#starting-a-process-instance-at-its-default-initial-activity">process instance variables</a>.</p> }
+                        description={ <>Must be a proper <a href="https://www.w3schools.com/js/js_json_intro.asp">JSON string</a> representing <a href="https://docs.fluxnova.finos.org/manual/latest/reference/rest/process-definition/post-start-process-instance/#starting-a-process-instance-at-its-default-initial-activity">process instance variables</a>.</> }
                         hint="A JSON string representing the variables the process instance is started with."
                         validate={ (value) => {
                           if (value && value.trim().length > 0) {

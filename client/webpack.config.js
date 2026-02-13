@@ -62,10 +62,17 @@ module.exports = {
     modules: [
       'node_modules',
       resourcePath
-    ]
+    ],
+    fullySpecified: false
   },
   module: {
     rules: [
+      {
+        test: /\.mjs$/,
+        resolve: {
+          fullySpecified: false
+        }
+      },
       {
         test: /\.js$/,
         exclude: /node_modules/,
@@ -162,8 +169,7 @@ function cssLoader() {
       loader: 'css-loader',
       options: {
         modules: {
-          localIdentName: '[path][name]__[local]--[hash:base64:5]',
-          mode: 'global'
+          localIdentName: '[path][name]__[local]--[hash:base64:5]'
         }
       }
     };
@@ -171,7 +177,9 @@ function cssLoader() {
     return {
       loader: 'css-loader',
       options: {
-        modules: 'global'
+        modules: {
+          localIdentName: '[hash:base64]'
+        }
       }
     };
   }
