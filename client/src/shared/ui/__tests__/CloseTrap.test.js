@@ -10,7 +10,6 @@
 
 import CloseTrap from '../trap/CloseTrap';
 
-
 describe('<CloseTrap>', function() {
 
   it('should focus initiator', function() {
@@ -26,6 +25,6 @@ describe('<CloseTrap>', function() {
     closeTrap.unmount();
 
     // then
-    expect(document.activeElement).to.eql(el);
+    expect(document.activeElement).toEqual(el);
   });
 });

@@ -1,6 +1,6 @@
 {
   "name": "fluxnova-modeler-client",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Fluxnova Modeler client application",
   "private": true,
   "license": "MIT",
@@ -68,6 +68,7 @@
     "p-series": "^3.0.0",
     "react": "^16.14.0",
     "react-dom": "^16.14.0",
+    "react-select": "^5.7.4",
     "scroll-tabs": "^1.0.1",
     "semver-compare": "^1.0.0",
     "sourcemapped-stacktrace": "^1.1.11",
@@ -81,7 +82,6 @@
     "@babel/preset-env": "^7.25.4",
     "@babel/preset-react": "^7.24.7",
     "@sentry/webpack-plugin": "^3.0.0",
-    "@testing-library/react": "^12.0.0",
     "babel-loader": "^9.2.1",
     "babel-plugin-istanbul": "^7.0.0",
     "bpmnlint-loader": "^0.1.6",
@@ -106,7 +106,7 @@
     "mocha": "^10.7.3",
     "mocha-test-container-support": "0.2.0",
     "npm-run-all2": "^7.0.0",
-    "puppeteer": "^24.0.0",
+    "puppeteer": "^24.28.0",
     "react-svg-loader": "^3.0.3",
     "react-test-renderer": "^16.14.0",
     "sinon": "^17.0.1",
@@ -120,9 +120,9 @@
     "build": "cross-env NODE_ENV=production webpack",
     "postbuild": "del-cli --force ../app/public && mv build ../app/public",
     "dev": "run-s start",
-    "auto-test": "npm test -- --auto-watch --no-single-run",
+    "auto-test": "npm run test -- --auto-watch --no-single-run",
     "test": "karma start karma.config.js",
-    "bpmn-io-modelers:test": "cross-env MODELERS=1 npm test",
+    "bpmn-io-modelers:test": "cross-env MODELERS=1 npm run test",
     "bpmn-io-modelers:auto-test": "cross-env MODELERS=1 npm run auto-test"
   }
 }

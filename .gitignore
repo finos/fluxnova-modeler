@@ -10,3 +10,4 @@ coverage
 .linked-dependencies
 tmp
 bin/act
+.idea
