@@ -18,6 +18,8 @@ import handToolOnSpaceModule from './features/hand-tool-on-space';
 import propertiesPanelKeyboardBindingsModule from './features/properties-panel-keyboard-bindings';
 import propPanelExtensionModule from './features/properties-panel-extension';
 import bpmnFormExtensionProviderModule from './features/properties-panel-form-group';
+import restrictedIoModule from './features/restricted-io';
+
 import lintingAnnotationsModule from '@camunda/linting/modeler';
 
 import { BpmnJSTracking as bpmnJSTracking } from 'bpmn-js-tracking';
@@ -79,6 +81,7 @@ const extensionModules = [
   propertiesPanelKeyboardBindingsModule,
   bpmnFormExtensionProviderModule,
   propPanelExtensionModule,
+  restrictedIoModule,
   lintingAnnotationsModule,
   bpmnJSTracking,
   contextPadTracking,
