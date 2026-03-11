@@ -1,17 +1,13 @@
-import { CheckboxEntry, isEdited } from '@bpmn-io/properties-panel';
-import { is } from 'bpmn-js/lib/util/ModelUtil';
+import { CheckboxEntry as DefaultCheckboxEntry, isEdited } from '@bpmn-io/properties-panel';
 
 export default class RestrictedIOPlugin {
-  constructor(propertiesPanel, commandStack) {
+  constructor(propertiesPanel, commandStack, CheckboxEntry = DefaultCheckboxEntry) {
     this.commandStack = commandStack;
+    this.CheckboxEntry = CheckboxEntry;
     propertiesPanel.registerProvider(100, this);
   }
 
   getGroups(element) {
-    // Important: inputParameter is moddle, not shape
-   /* if (!is(element, 'camunda:InputParameter')) {
-      return (groups) => groups;
-    }*/
 
     return (groups) => {
 
@@ -23,13 +19,13 @@ export default class RestrictedIOPlugin {
 
       // Find existing input/output group
       const ioGroups = groups.filter(g => g.id === 'CamundaPlatform__Input' || g.id === 'CamundaPlatform__Output');
-      // Add checkbox entry to the existing group
 
+      // Add checkbox entry to the existing group
       ioGroups.forEach(ioGroup => {
 
         ioGroup.items.forEach(item => {
-          // Add Restricted checkbox to each item
 
+          // Add Restricted checkbox to each item
           const paramName = item.label || item.id;
 
           const param =
@@ -47,7 +43,7 @@ export default class RestrictedIOPlugin {
               return node && !!node.value;
             }
 
-          })
+          });
 
         });
       });
@@ -65,10 +61,10 @@ export default class RestrictedIOPlugin {
   }
 
 
-   RestrictedCheckbox = (props)=> {
+  RestrictedCheckbox = (props)=> {
     const { element, parameter } = props;
 
-    return CheckboxEntry({
+    return this.CheckboxEntry({
       element,
       id: 'restricted',
       label: 'Restricted',
@@ -78,7 +74,7 @@ export default class RestrictedIOPlugin {
       },
       setValue: (value) => {
         this.commandStack.execute('element.updateModdleProperties', {
-          element: element,           // the task shape
+          element: element, // the task shape
           moddleElement: parameter, // the actual parameter moddle element
           properties: {
             restrictionTag: value ? 'restricted' : undefined
@@ -86,7 +82,7 @@ export default class RestrictedIOPlugin {
         });
       }
     });
-  }
+  };
 }
 
 RestrictedIOPlugin.$inject = [
