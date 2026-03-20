@@ -69,15 +69,14 @@ export default class RestrictedIOPlugin {
       id: 'restricted',
       label: 'Restricted',
       getValue: () => {
-        const restrictionTag = parameter.get('restrictionTag');
-        return restrictionTag === 'restricted';
+        return !!parameter.get('restricted');
       },
       setValue: (value) => {
         this.commandStack.execute('element.updateModdleProperties', {
           element: element, // the task shape
           moddleElement: parameter, // the actual parameter moddle element
           properties: {
-            restrictionTag: value ? 'restricted' : undefined
+            restricted: !!value
           }
         });
       }

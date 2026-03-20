@@ -11,8 +11,8 @@
       "isAbstract": true,
       "properties": [
         {
-          "name": "restrictionTag",
-          "type": "String",
+          "name": "restricted",
+          "type": "Boolean",
           "isAttr": true
         }
       ]

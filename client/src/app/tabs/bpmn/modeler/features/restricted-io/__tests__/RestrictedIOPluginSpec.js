@@ -42,7 +42,7 @@ describe('RestrictedIOPlugin', function() {
                   { name: 'input1', get: sinon.stub().returns(undefined) }
                 ],
                 outputParameters: [
-                  { name: 'output1', get: sinon.stub().returns('restricted') }
+                  { name: 'output1', get: sinon.stub().returns(true) }
                 ]
               }
             ]
@@ -92,9 +92,9 @@ describe('RestrictedIOPlugin', function() {
       CheckboxEntryMock.resetHistory();
     });
 
-    it('should get value from restrictionTag property', function() {
+    it('should get value from restricted property', function() {
       const parameter = {
-        get: sinon.stub().withArgs('restrictionTag').returns('restricted')
+        get: sinon.stub().withArgs('restricted').returns(true)
       };
 
       const props = { element: {}, parameter };
@@ -103,6 +103,19 @@ describe('RestrictedIOPlugin', function() {
       const checkboxProps = CheckboxEntryMock.firstCall.args[0];
       const value = checkboxProps.getValue();
       expect(value).to.be.true;
+    });
+
+    it('should return false when restricted property is false', function() {
+      const parameter = {
+        get: sinon.stub().withArgs('restricted').returns(false)
+      };
+
+      const props = { element: {}, parameter };
+      plugin.RestrictedCheckbox(props);
+
+      const checkboxProps = CheckboxEntryMock.firstCall.args[0];
+      const value = checkboxProps.getValue();
+      expect(value).to.be.false;
     });
 
     it('should execute command on setValue(true)', function() {
@@ -119,10 +132,11 @@ describe('RestrictedIOPlugin', function() {
 
       expect(commandStack.execute.calledOnce).to.be.true;
       expect(commandStack.execute.firstCall.args[0]).to.equal('element.updateModdleProperties');
-      expect(commandStack.execute.firstCall.args[1].properties.restrictionTag).to.equal('restricted');
+      expect(commandStack.execute.firstCall.args[1].properties.restricted).to.be.true;
+      expect(commandStack.execute.firstCall.args[1].properties).to.not.have.property('restrictionTag');
     });
 
-    it('should execute command with undefined on setValue(false)', function() {
+    it('should execute command with false on setValue(false)', function() {
       const element = { id: 'element1' };
       const parameter = {
         id: 'param1',
@@ -134,7 +148,8 @@ describe('RestrictedIOPlugin', function() {
       const checkboxProps = CheckboxEntryMock.firstCall.args[0];
       checkboxProps.setValue(false);
 
-      expect(commandStack.execute.firstCall.args[1].properties.restrictionTag).to.be.undefined;
+      expect(commandStack.execute.firstCall.args[1].properties.restricted).to.be.false;
+      expect(commandStack.execute.firstCall.args[1].properties).to.not.have.property('restrictionTag');
     });
   });
 });
