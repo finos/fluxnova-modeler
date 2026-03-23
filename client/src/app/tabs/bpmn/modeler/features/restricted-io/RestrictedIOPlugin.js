@@ -1,4 +1,14 @@
-import { CheckboxEntry as DefaultCheckboxEntry, isEdited } from '@bpmn-io/properties-panel';
+import {
+  CheckboxEntry as DefaultCheckboxEntry,
+  isCheckboxEntryEdited
+} from '@bpmn-io/properties-panel';
+
+const SUPPORTED_RESTRICTED_TYPES = new Set([
+  'camunda:InputParameter',
+  'camunda:OutputParameter',
+  'camunda:In',
+  'camunda:Out'
+]);
 
 export default class RestrictedIOPlugin {
   constructor(propertiesPanel, commandStack, CheckboxEntry = DefaultCheckboxEntry) {
@@ -10,46 +20,121 @@ export default class RestrictedIOPlugin {
   getGroups(element) {
 
     return (groups) => {
+      const { inputOutput, inOutMappings } = this.getRestrictedCandidates(element);
+      const inputParams = (inputOutput && inputOutput.inputParameters) || [];
+      const outputParams = (inputOutput && inputOutput.outputParameters) || [];
 
-      const io = this.getInputOutput(element);
-      if (!io) return groups;
-
-      const inputParams = io.inputParameters || [];
-      const outputParams = io.outputParameters || [];
-
-      // Find existing input/output group
-      const ioGroups = groups.filter(g => g.id === 'CamundaPlatform__Input' || g.id === 'CamundaPlatform__Output');
-
-      // Add checkbox entry to the existing group
-      ioGroups.forEach(ioGroup => {
-
-        ioGroup.items.forEach(item => {
-
-          // Add Restricted checkbox to each item
-          const paramName = item.label || item.id;
-
-          const param =
-            inputParams.find(p => p.name === paramName) ||
-            outputParams.find(p => p.name === paramName);
-
-          if (!param) return;
-
-          item.entries.push({
-            id: `restricted-${item.id}`,
-            component: this.RestrictedCheckbox,
-            type: 'input',
-            parameter: param,
-            isEdited: function isEdited(node) {
-              return node && !!node.value;
+      groups
+        .filter(g => g.id && g.id.startsWith('CamundaPlatform__'))
+        .forEach(group => {
+          (group.items || []).forEach(item => {
+            if (!Array.isArray(item.entries)) {
+              return;
             }
 
-          });
+            const parameter = this.getParameterForItem(item, {
+              inputParams,
+              outputParams,
+              inOutMappings,
+              groupId: group.id
+            });
 
+            if (!parameter || !SUPPORTED_RESTRICTED_TYPES.has(parameter.$type)) {
+              return;
+            }
+
+            this.insertRestrictedEntry(item, parameter);
+          });
         });
-      });
 
       return groups;
     };
+  }
+
+  getRestrictedCandidates(element) {
+    const bo = element.businessObject;
+    const ext = bo.extensionElements;
+
+    if (!ext || !Array.isArray(ext.values)) {
+      return {
+        inputOutput: null,
+        inOutMappings: []
+      };
+    }
+
+    return {
+      inputOutput: ext.values.find(v => v.$type === 'camunda:InputOutput') || null,
+      inOutMappings: ext.values.filter(v => v.$type === 'camunda:In' || v.$type === 'camunda:Out')
+    };
+  }
+
+  getParameterForItem(item, { inputParams, outputParams, inOutMappings, groupId }) {
+    if (groupId === 'CamundaPlatform__In' || groupId === 'CamundaPlatform__Out') {
+      const anyMappingEntry = item.entries.find(e => e && e.mapping);
+      if (anyMappingEntry) return anyMappingEntry.mapping;
+      return inOutMappings.find(m => m.id && m.id === item.id) || null;
+    }
+
+    const entryParameter = this.getParameterFromEntries(item.entries);
+
+    if (entryParameter) {
+      return entryParameter;
+    }
+
+    if (groupId === 'CamundaPlatform__Input' || groupId === 'CamundaPlatform__Output') {
+      const paramName = item.label || item.id;
+
+      return (
+        inputParams.find(p => p.name === paramName) ||
+        outputParams.find(p => p.name === paramName) ||
+        null
+      );
+    }
+
+    return inOutMappings.find(mapping => mapping.id && mapping.id === item.id) || null;
+  }
+
+  getParameterFromEntries(entries) {
+    const localEntry = entries.find(e => e && e.id && e.id.endsWith('-local') && e.mapping);
+
+    if (localEntry && localEntry.mapping) {
+      return localEntry.mapping;
+    }
+
+    const parameterEntry = entries.find(e => e && (e.parameter || e.mapping));
+
+    if (!parameterEntry) {
+      return null;
+    }
+
+    return parameterEntry.parameter || parameterEntry.mapping;
+  }
+
+  insertRestrictedEntry(item, parameter) {
+    const restrictedEntryId = `restricted-${item.id}`;
+
+    const hasRestrictedEntry = item.entries.some(entry => entry && entry.id === restrictedEntryId);
+
+    if (hasRestrictedEntry) {
+      return;
+    }
+
+    const restrictedEntry = {
+      id: restrictedEntryId,
+      component: this.RestrictedCheckbox,
+      type: 'input',
+      parameter,
+      isEdited: isCheckboxEntryEdited
+    };
+
+    const localIndex = item.entries.findIndex(entry => entry && entry.id && entry.id.endsWith('-local'));
+
+    if (localIndex !== -1) {
+      item.entries.splice(localIndex + 1, 0, restrictedEntry);
+      return;
+    }
+
+    item.entries.push(restrictedEntry);
   }
 
   getInputOutput(element) {

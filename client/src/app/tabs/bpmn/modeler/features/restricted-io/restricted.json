@@ -30,6 +30,20 @@
         "camunda:OutputParameter",
         "RestrictedCapable"
       ]
+    },
+    {
+      "name": "In",
+      "extends": [
+        "camunda:In",
+        "RestrictedCapable"
+      ]
+    },
+    {
+      "name": "Out",
+      "extends": [
+        "camunda:Out",
+        "RestrictedCapable"
+      ]
     }
   ]
 }

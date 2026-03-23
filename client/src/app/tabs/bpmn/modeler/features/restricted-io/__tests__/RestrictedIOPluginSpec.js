@@ -27,9 +27,22 @@ describe('RestrictedIOPlugin', function() {
 
   describe('#getGroups', function() {
     let plugin, element;
+    let inMapping, outMapping;
 
     beforeEach(function() {
       plugin = new RestrictedIOPlugin(propertiesPanelSpy, commandStack, CheckboxEntryMock);
+
+      inMapping = {
+        id: 'in-map-1',
+        $type: 'camunda:In',
+        get: sinon.stub().withArgs('restricted').returns(false)
+      };
+
+      outMapping = {
+        id: 'out-map-1',
+        $type: 'camunda:Out',
+        get: sinon.stub().withArgs('restricted').returns(false)
+      };
 
       // Mock element with camunda:InputOutput extension
       element = {
@@ -39,12 +52,23 @@ describe('RestrictedIOPlugin', function() {
               {
                 $type: 'camunda:InputOutput',
                 inputParameters: [
-                  { name: 'input1', get: sinon.stub().returns(undefined) }
+                  {
+                    name: 'input1',
+                    $type: 'camunda:InputParameter',
+                    get: sinon.stub().returns(undefined)
+                  }
                 ],
                 outputParameters: [
-                  { name: 'output1', get: sinon.stub().returns(true) }
-                ]
-              }
+                  {
+                    name: 'output1',
+                    $type: 'camunda:OutputParameter',
+                    get: sinon.stub().returns(true)
+                  }
+                ],
+                get: sinon.stub()
+              },
+              inMapping,
+              outMapping
             ]
           }
         }
@@ -81,6 +105,122 @@ describe('RestrictedIOPlugin', function() {
       expect(inputItem.entries).to.have.lengthOf(1);
       expect(inputItem.entries[0].id).to.equal('restricted-input1');
       expect(outputItem.entries[0].id).to.equal('restricted-output1');
+    });
+
+    it('should insert restricted directly below Local for call activity In/Out mappings', function() {
+      const groups = [
+        {
+          id: 'CamundaPlatform__In',
+          items: [
+            {
+              id: 'in-map-1',
+              label: 'in-map-1',
+              entries: [
+                { id: 'in-map-1-source', parameter: inMapping },
+                { id: 'in-map-1-local', mapping: inMapping },
+                { id: 'in-map-1-target', parameter: inMapping }
+              ]
+            }
+          ]
+        },
+        {
+          id: 'CamundaPlatform__Out',
+          items: [
+            {
+              id: 'out-map-1',
+              label: 'out-map-1',
+              entries: [
+                { id: 'out-map-1-source', parameter: outMapping },
+                { id: 'out-map-1-local', mapping: outMapping },
+                { id: 'out-map-1-target', parameter: outMapping }
+              ]
+            }
+          ]
+        }
+      ];
+
+      const resultGroups = plugin.getGroups(element)(groups);
+
+      const inEntries = resultGroups.find(g => g.id === 'CamundaPlatform__In').items[0].entries;
+      const outEntries = resultGroups.find(g => g.id === 'CamundaPlatform__Out').items[0].entries;
+
+      const inLocalIndex = inEntries.findIndex(e => e.id === 'in-map-1-local');
+      const outLocalIndex = outEntries.findIndex(e => e.id === 'out-map-1-local');
+
+      expect(inEntries[inLocalIndex + 1].id).to.equal('restricted-in-map-1');
+      expect(outEntries[outLocalIndex + 1].id).to.equal('restricted-out-map-1');
+    });
+
+    it('should still add restricted entry even when Local mapping is absent on call mappings', function() {
+      const groups = [
+        {
+          id: 'CamundaPlatform__In',
+          items: [
+            {
+              id: 'in-map-1',
+              label: 'in-map-1',
+              entries: [
+                { id: 'in-map-1-source', mapping: inMapping },
+                { id: 'in-map-1-target', mapping: inMapping }
+              ]
+            }
+          ]
+        }
+      ];
+
+      const resultGroups = plugin.getGroups(element)(groups);
+      const entries = resultGroups[0].items[0].entries;
+
+      expect(entries.some(e => e.id === 'restricted-in-map-1')).to.be.true;
+    });
+
+    it('should not duplicate restricted entries on repeated processing', function() {
+      const groups = [
+        {
+          id: 'CamundaPlatform__In',
+          items: [
+            {
+              id: 'in-map-1',
+              label: 'in-map-1',
+              entries: [
+                { id: 'in-map-1-source', parameter: inMapping },
+                { id: 'in-map-1-local', mapping: inMapping },
+                { id: 'in-map-1-target', parameter: inMapping }
+              ]
+            }
+          ]
+        }
+      ];
+
+      const groupModifier = plugin.getGroups(element);
+      groupModifier(groups);
+      groupModifier(groups);
+
+      const entries = groups[0].items[0].entries;
+      const restrictedEntries = entries.filter(e => e.id === 'restricted-in-map-1');
+
+      expect(restrictedEntries).to.have.lengthOf(1);
+    });
+
+    it('should not modify non-CamundaPlatform groups', function() {
+      const groups = [
+        {
+          id: 'ElementTemplates__Input',
+          items: [
+            {
+              id: 'templated-item',
+              entries: [
+                { id: 'templated-item-local', mapping: inMapping }
+              ]
+            }
+          ]
+        }
+      ];
+
+      const resultGroups = plugin.getGroups(element)(groups);
+      const entries = resultGroups[0].items[0].entries;
+
+      expect(entries.some(e => e.id === 'restricted-templated-item')).to.be.false;
     });
   });
 
