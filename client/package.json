@@ -55,7 +55,7 @@
     "dmn-moddle": "^10.0.0",
     "drag-tabs": "^2.3.1",
     "events": "^3.0.0",
-    "fast-xml-parser": "^5.3.8",
+    "fast-xml-parser": "^5.5.7",
     "formik": "2.0.4",
     "ids": "^1.0.0",
     "inherits-browser": "^0.1.0",
