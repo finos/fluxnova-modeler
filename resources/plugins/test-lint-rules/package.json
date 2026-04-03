@@ -13,7 +13,7 @@
     "bpmnlint-plugin-custom": "file:bpmnlint-plugin-custom",
     "camunda-modeler-plugin-helpers": "^5.1.0",
     "npm-run-all2": "^7.0.0",
-    "webpack": "^5.74.0",
+    "webpack": "^5.104.1",
     "webpack-cli": "^6.0.0"
   }
 }

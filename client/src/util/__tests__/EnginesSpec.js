@@ -29,7 +29,7 @@ describe('util/Engines', function() {
 
     it('Camunda Platform', verifyLatestStable(ENGINES.PLATFORM, '7.22.0'));
 
-    it('Fluxnova Platform', verifyLatestStable(ENGINES.FLUXNOVA, '1.0.0'));
+    it('Fluxnova Platform', verifyLatestStable(ENGINES.FLUXNOVA, '2.0.0'));
 
     it('Camunda Cloud', verifyLatestStable(ENGINES.CLOUD, '8.6.0'));
 

@@ -6,6 +6,12 @@ All notable changes to the [Fluxnova Modeler](https://github.com/finos/fluxnova-
 
 **\_Note:** Yet to be released changes appear here.\_
 
+## 1.2.0
+
+- Added retry time cycle functionality for element templates
+- Enabled hybrid model for Karma to Jest to enable running of both suites in parallel
+- Add support for 2.0.0 execution platform version
+
 ## 1.1.1
 
 - Fixed issue with broken Monitoring link

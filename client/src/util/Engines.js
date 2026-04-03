@@ -27,8 +27,8 @@ export const ENGINE_PROFILES = [
   },
   {
     executionPlatform: ENGINES.FLUXNOVA,
-    executionPlatformVersions: [ '1.0.0' ],
-    latestStable: '1.0.0'
+    executionPlatformVersions: [ '1.0.0' ,'2.0.0' ],
+    latestStable: '2.0.0'
   }
 ];
 

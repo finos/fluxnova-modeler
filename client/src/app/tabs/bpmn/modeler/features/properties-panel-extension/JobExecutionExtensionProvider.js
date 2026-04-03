@@ -40,7 +40,7 @@ export default class JobExecutionExtensionProvider {
   }
 }
 
- JobExecutionExtensionProvider.$inject = [ 'propertiesPanel' ];
+JobExecutionExtensionProvider.$inject = [ 'propertiesPanel' ];
 
 function isAdjacentGroup(group) {
   const entries = group.entries;

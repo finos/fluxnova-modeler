@@ -45,7 +45,7 @@ ${licenseText}
 END OF ${name} NOTICES AND INFORMATION`;
   }
 
-  return `camunda-modeler
+  return `fluxnova-modeler
 
 THIRD-PARTY SOFTWARE NOTICES AND INFORMATION
 Do Not Translate or Localize
