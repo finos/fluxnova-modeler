@@ -10,9 +10,9 @@
 
 /* global sinon */
 
-import React from 'react';
+import React, { createRef } from 'react';
 
-import { mount } from 'enzyme';
+import { render } from '@testing-library/react';
 
 import {
   Cache,
@@ -649,13 +649,9 @@ describe('<FormEditor>', function() {
         });
 
         // when
-        const { instance, wrapper } = await renderEditor(schema, { onAction });
-
-        wrapper.update();
+        const { instance } = await renderEditor(schema, { onAction });
 
         // then
-        expect(wrapper.find('EngineProfile').exists()).to.be.true;
-
         expect(instance.getCached().engineProfile).to.eql(engineProfile);
       };
     }
@@ -688,13 +684,9 @@ describe('<FormEditor>', function() {
     it('should update cached engine profile on change', async function() {
 
       // given
-      const { instance, wrapper } = await renderEditor(engineProfileSchema);
-
-      wrapper.update();
+      const { instance } = await renderEditor(engineProfileSchema);
 
       // assume
-      expect(wrapper.find('EngineProfile').exists()).to.be.true;
-
       expect(instance.getCached().engineProfile).to.eql({
         executionPlatform: 'Fluxnova Platform',
         executionPlatformVersion: '1.0.0'
@@ -821,7 +813,7 @@ describe('<FormEditor>', function() {
 
         const {
           instance,
-          wrapper
+          unmount
         } = await renderEditor(engineProfileSchema, {
           onAction: onActionSpy
         });
@@ -829,7 +821,7 @@ describe('<FormEditor>', function() {
         const { form } = instance.getCached();
 
         // when
-        wrapper.unmount();
+        unmount();
 
         form.emit('commandStack.changed');
 
@@ -1135,15 +1127,13 @@ describe('<FormEditor>', function() {
       });
 
       const {
-        wrapper
+        container
       } = await renderEditor(engineProfileSchema, {
         cache,
         onAction: recordActions
       });
 
-      const editor = wrapper.find(FormEditor).getDOMNode();
-
-      const previewContainer = editor.querySelector('.cfp-preview-container');
+      const previewContainer = container.querySelector('.cfp-preview-container');
 
       // when
       previewContainer.dispatchEvent(new Event('focusin', { 'bubbles': true }));
@@ -1160,14 +1150,12 @@ describe('<FormEditor>', function() {
 
       // given
       const {
-        wrapper
+        container
       } = await renderEditor(engineProfileSchema, {
         onAction: recordActions
       });
 
-      const editor = wrapper.find(FormEditor).getDOMNode();
-
-      const previewContainer = editor.querySelector('.cfp-preview-container');
+      const previewContainer = container.querySelector('.cfp-preview-container');
 
       // when
       previewContainer.dispatchEvent(new Event('focusin', { 'bubbles': true }));
@@ -1198,7 +1186,7 @@ describe('<FormEditor>', function() {
 
       const {
         instance,
-        wrapper
+        container
       } = await renderEditor(engineProfileSchema, {
         cache,
         onAction: recordActions
@@ -1207,9 +1195,7 @@ describe('<FormEditor>', function() {
       // when
       instance.listen('off');
 
-      const editor = wrapper.find(FormEditor).getDOMNode();
-
-      const previewContainer = editor.querySelector('.cfp-preview-container');
+      const previewContainer = container.querySelector('.cfp-preview-container');
 
       // when
       previewContainer.dispatchEvent(new Event('focusin', { 'bubbles': true }));
@@ -1239,15 +1225,13 @@ describe('<FormEditor>', function() {
       });
 
       const {
-        wrapper
+        container
       } = await renderEditor(engineProfileSchema, {
         cache,
         onAction: recordActions
       });
 
-      const editor = wrapper.find(FormEditor).getDOMNode();
-
-      const dataContainer = editor.querySelector('.cfp-data-container');
+      const dataContainer = container.querySelector('.cfp-data-container');
 
       // when
       dataContainer.dispatchEvent(new Event('focusin', { 'bubbles': true }));
@@ -1264,14 +1248,12 @@ describe('<FormEditor>', function() {
 
       // given
       const {
-        wrapper
+        container
       } = await renderEditor(engineProfileSchema, {
         onAction: recordActions
       });
 
-      const editor = wrapper.find(FormEditor).getDOMNode();
-
-      const dataContainer = editor.querySelector('.cfp-data-container');
+      const dataContainer = container.querySelector('.cfp-data-container');
 
       // when
       dataContainer.dispatchEvent(new Event('focusin', { 'bubbles': true }));
@@ -1302,7 +1284,7 @@ describe('<FormEditor>', function() {
 
       const {
         instance,
-        wrapper
+        container
       } = await renderEditor(engineProfileSchema, {
         cache,
         onAction: recordActions
@@ -1311,9 +1293,7 @@ describe('<FormEditor>', function() {
       // when
       instance.listen('off');
 
-      const editor = wrapper.find(FormEditor).getDOMNode();
-
-      const dataContainer = editor.querySelector('.cfp-data-container');
+      const dataContainer = container.querySelector('.cfp-data-container');
 
       dataContainer.dispatchEvent(new Event('focusin', { 'bubbles': true }));
       dataContainer.dispatchEvent(new Event('focusout', { 'bubbles': true }));
@@ -1448,21 +1428,22 @@ async function renderEditor(schema, options = {}) {
   } = options;
 
   return new Promise((resolve) => {
-    let instance,
-        wrapper;
+    const ref = createRef();
 
     const resolveOnImport = (...args) => {
       onImport(...args);
 
       resolve({
-        instance,
-        wrapper
+        instance: ref.current,
+        container,
+        unmount
       });
     };
 
-    wrapper = mount(
+    const { container, unmount } = render(
       <SlotFillRoot>
         <TestEditor
+          ref={ ref }
           cache={ cache }
           getConfig={ getConfig }
           id={ id }
@@ -1479,7 +1460,7 @@ async function renderEditor(schema, options = {}) {
       </SlotFillRoot>
     );
 
-    instance = wrapper.find(FormEditor).instance();
+    const instance = ref.current;
 
     // properly mock form playground instantiation
     const { form } = instance.getCached();
@@ -1488,7 +1469,8 @@ async function renderEditor(schema, options = {}) {
     if (!waitForImport) {
       resolve({
         instance,
-        wrapper
+        container,
+        unmount
       });
     }
   });

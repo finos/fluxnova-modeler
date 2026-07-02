@@ -10,7 +10,7 @@
 
 import React from 'react';
 
-import { shallow } from 'enzyme';
+import { render, screen } from '@testing-library/react';
 
 import { ToggleSwitch } from '..';
 
@@ -22,21 +22,39 @@ describe('<ToggleSwitch>', function() {
   });
 
 
-  it('should enable option', function() {
+  it('should be checked', function() {
 
     // given
-    const wrapper = createToggleSwitch({
+    createToggleSwitch({
       field:
         {
+          name: 'foo',
           value: true
         }
     });
 
-    const input = wrapper.find('input');
+    const input = screen.getByRole('checkbox');
 
     // then
-    expect(input.prop('value')).to.be.true;
-    expect(input.prop('defaultChecked')).to.be.true;
+    expect(input.checked).to.be.true;
+  });
+
+
+  it('should not be checked', function() {
+
+    // given
+    createToggleSwitch({
+      field:
+        {
+          name: 'foo',
+          value: false
+        }
+    });
+
+    const input = screen.getByRole('checkbox');
+
+    // then
+    expect(input.checked).to.be.false;
   });
 
 });
@@ -44,10 +62,17 @@ describe('<ToggleSwitch>', function() {
 
 // helpers ///////////////////
 
-function createToggleSwitch(options = {}) {
+const DEFAULT_FIELD = {
+  name: 'foo',
+  value: true
+};
 
-  return shallow(<ToggleSwitch
-    field={ options.field || {} }
+function createToggleSwitch(props = {}) {
+  const {
+    field = DEFAULT_FIELD
+  } = props;
+
+  return render(<ToggleSwitch
+    field={ field }
   />);
-
 }

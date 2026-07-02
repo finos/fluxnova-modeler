@@ -63,7 +63,7 @@ export default class EmptyTab extends PureComponent {
     const createButtons = this.getCreateButtons('Fluxnova');
 
     return (
-      <div id="welcome-page-platform" className="welcome-card">
+      <div id="welcome-page-platform" className="welcome-card" data-testid="welcome-page-platform">
         <div className="engine-info">
           <div className="engine-info-heading">
             <PlatformIcon className="engine-icon platform-icon" />

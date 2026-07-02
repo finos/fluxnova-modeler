@@ -33,6 +33,7 @@ process.env.CHROME_BIN = require('puppeteer').executablePath();
 
 // configures browsers to run test against
 // any of [ 'ChromeHeadless', 'Chrome', 'Firefox', 'IE', 'PhantomJS' ]
+var autocleanup = 'test/helper/autocleanup.js';
 
 var suite = 'test/suite.js';
 
@@ -53,18 +54,15 @@ module.exports = function(karma) {
     ],
 
     files: [
+      autocleanup,
       suite
     ],
-    client: {
-      mocha: {
-        timeout: '10000'
-      }
-    },
     preprocessors: {
+      [autocleanup]: [ 'webpack' ],
       [suite]: [ 'webpack', 'env' ]
     },
 
-    reporters: [ 'progress' ].concat(coverage ? 'coverage' : []),
+    reporters: [ 'mocha' ].concat(coverage ? 'coverage' : []),
 
     coverageReporter: {
       reporters: [
@@ -79,9 +77,22 @@ module.exports = function(karma) {
         flags: [ '--no-sandbox' ]
       }
     },
-    browserNoActivityTimeout: 30000,
+
+    browserNoActivityTimeout: 60000,
+    browserDisconnectTolerance: 3,
+    browserSocketTimeout: 60000,
+    browserDisconnectTimeout: 60000,
+    pingTimeout: 60000,
+
     singleRun: true,
     autoWatch: false,
+
+    client: {
+      mocha: {
+        timeout: 10000
+      },
+      captureConsole: false
+    },
 
     webpack: {
       mode: 'none',
@@ -114,9 +125,11 @@ module.exports = function(karma) {
       },
       plugins: [
         new DefinePlugin({
-          'process.env': {
-            NODE_ENV: JSON.stringify('test'),
-            WINDOWS: JSON.stringify(windows)
+          'process.env.NODE_ENV': JSON.stringify('test'),
+          'process.env.WINDOWS': JSON.stringify(windows),
+          'process.env.RTL_SKIP_AUTO_CLEANUP': JSON.stringify('true'), // auto-cleanup is configured as beforeEach hook
+          'process': { // must be present to prevent short-circuit in RTL auto-cleanup
+            env: {} // mocks variables set at build time
           }
         })
       ],

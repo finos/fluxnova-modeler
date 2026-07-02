@@ -10,7 +10,7 @@
 
 import React from 'react';
 
-import { shallow } from 'enzyme';
+import { render } from '@testing-library/react';
 
 import { CheckBox } from '..';
 
@@ -23,12 +23,10 @@ describe('<CheckBox>', function() {
 
 });
 
-
 // helpers ///////////////////
 
 function createCheckBox(options = {}) {
-
-  return shallow(<CheckBox
+  return render(<CheckBox
     field={ options.field || {} }
     form={ options.form || {} }
   />);

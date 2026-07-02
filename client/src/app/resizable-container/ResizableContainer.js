@@ -179,6 +179,7 @@ function Resizer(props) {
     <div
       className={ classNames('resizer', `resizer-${ direction }`) }
       onMouseDown={ onMouseDown }
+      data-testid="resizer"
     >
       {
         isHorizontal(direction)

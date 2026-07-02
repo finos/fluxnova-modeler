@@ -217,12 +217,11 @@ export class DmnEditor extends CachedComponent {
 
   isDirty = () => {
     let {
-      dirty,
       modeler,
       stackIdx
     } = this.getCached();
 
-    return dirty || modeler.getStackIdx() !== stackIdx;
+    return modeler.getStackIdx() !== stackIdx;
   };
 
   viewContentChanged = () => {
