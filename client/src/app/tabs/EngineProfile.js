@@ -9,24 +9,17 @@
  */
 
 import React, { useState, useRef } from 'react';
-
 import classnames from 'classnames';
-
 import semverCompare from 'semver-compare';
 
-
-import {
-  FLUXNOVA_ENGINE_VERSION
-} from '../../util/Flags';
-
+import { ENGINES, ENGINE_LABELS, ENGINE_PROFILES, getLatestStable } from '../../util/Engines';
+import Flags, { FLUXNOVA_ENGINE_VERSION } from '../../util/Flags';
 import {
   Overlay,
   Section
 } from '../../shared/ui';
 
 import { Fill } from '../slot-fill';
-
-import { ENGINES, ENGINE_LABELS, ENGINE_PROFILES, getLatestStable } from '../../util/Engines';
 
 const HELP_LINKS = {
   [ ENGINES.FLUXNOVA ]: 'https://docs.fluxnova.finos.org/',
@@ -304,7 +297,7 @@ export function getDefaultVersion(engine) {
 }
 
 function getFlagVersion() {
-  return FLUXNOVA_ENGINE_VERSION;
+  return Flags.get(FLUXNOVA_ENGINE_VERSION, null);
 }
 
 function getVersions(engine) {
