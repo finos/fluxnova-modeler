@@ -80,5 +80,16 @@ export default [
       }
     },
     files: files.tests
+  },
+
+  // plugin client sources (CommonJS modules bundled by webpack)
+  {
+    languageOptions: {
+      globals: {
+        require: 'readonly',
+        module: 'writable'
+      }
+    },
+    files: [ 'resources/plugins/*/client/**/*.js' ]
   }
 ];

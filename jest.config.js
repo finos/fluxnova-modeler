@@ -45,6 +45,12 @@ const config = {
   // The glob patterns Jest uses to detect test files
   testMatch: [ '**/?(*.)+(spec|test).js' ],
 
+  // Exclude plugin directories — they have their own test runners
+  testPathIgnorePatterns: [
+    '/node_modules/',
+    '<rootDir>/resources/plugins/'
+  ],
+
   // A map from regular expressions to paths to transformers
   transform: {
     '^.+\\.(ts|js|jsx)$': 'babel-jest',
