@@ -11,6 +11,7 @@
 const handlers = [
   require('./after-pack/add-version'),
   require('./after-pack/add-platform-files'),
+  require('./after-pack/add-plugins'),
   require('./after-pack/set-permissions')
 ];
 
