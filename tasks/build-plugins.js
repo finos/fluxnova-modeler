@@ -8,7 +8,7 @@
  */
 
 const path = require('path');
-const { execSync } = require('child_process');
+const { spawnSync } = require('child_process');
 
 const ROOT_DIR = path.resolve(__dirname, '..');
 
@@ -20,18 +20,23 @@ if (!plugins.length) {
   process.exit(0);
 }
 
+// On Windows npm is npm.cmd; on Unix it is npm
+const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+
 for (const pluginPath of plugins) {
   const absPath = path.resolve(ROOT_DIR, pluginPath);
+  const opts = { cwd: absPath, stdio: 'inherit' };
 
   console.log(`Building plugin at ${absPath}`);
 
-  execSync('npm install', {
-    cwd: absPath,
-    stdio: 'inherit'
-  });
+  run(npm, [ 'install' ], opts);
+  run(npm, [ 'run', 'all' ], opts);
+}
 
-  execSync('npm run all', {
-    cwd: absPath,
-    stdio: 'inherit'
-  });
+function run(cmd, args, opts) {
+  const result = spawnSync(cmd, args, opts);
+
+  if (result.status !== 0) {
+    process.exit(result.status || 1);
+  }
 }
