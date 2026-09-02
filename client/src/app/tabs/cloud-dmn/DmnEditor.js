@@ -1083,15 +1083,3 @@ function isOverviewOpen(props) {
 
   return !dmnOverview || dmnOverview.open;
 }
-
-/**
- * Check layout whether overview was opened.
- *
- * @param {Object} props
- * @param {Object} prevProps
- *
- * @returns {boolean}
- */
-function isOverviewOpened(props, prevProps) {
-  return isOverviewOpen(prevProps) === false && isOverviewOpen(props) === true;
-}

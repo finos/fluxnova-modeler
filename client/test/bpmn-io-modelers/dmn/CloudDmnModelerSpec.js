@@ -438,185 +438,185 @@ describe('DmnModeler', function() {
 
   describe('#updateOverview', function() {
 
-      let modeler;
+    let modeler;
 
-      beforeEach(async function() {
-        modeler = await createModeler({
-          container: modelerContainer
-        });
-
-        modeler.updateOverview(overviewContainer, true);
+    beforeEach(async function() {
+      modeler = await createModeler({
+        container: modelerContainer
       });
 
-      it('should detach overview when parentNode is null', async function() {
+      modeler.updateOverview(overviewContainer, true);
+    });
 
-        // assume
-        expect(modeler._overview._container.parentNode).to.exist;
+    it('should detach overview when parentNode is null', async function() {
 
-        // when
-        modeler.updateOverview(null, true);
+      // assume
+      expect(modeler._overview._container.parentNode).to.exist;
 
-        // then
-        expect(modeler._overview._container.parentNode).to.not.exist;
-      });
+      // when
+      modeler.updateOverview(null, true);
 
-
-      it('should not re-attach if already attached to same parent', async function() {
-
-        // given
-        const spy = sinon.spy(modeler._overview, 'attachTo');
-
-        // when
-        modeler.updateOverview(overviewContainer, true);
-
-        // then
-        expect(spy).to.not.have.been.called;
-      });
-
-
-      it('should emit overviewOpen when open is true', async function() {
-
-        // given
-        modeler.updateOverview(null, false);
-
-        const spy = sinon.spy();
-        modeler.on('overviewOpen', spy);
-
-        // when
-        modeler.updateOverview(overviewContainer, true);
-
-        // then
-        expect(spy).to.have.been.calledOnce;
-      });
-
-
-      it('should not emit overviewOpen when open is false', async function() {
-
-        // given
-        modeler.updateOverview(null, false);
-
-        const spy = sinon.spy();
-        modeler.on('overviewOpen', spy);
-
-        // when
-        modeler.updateOverview(overviewContainer, false);
-
-        // then
-        expect(spy).to.not.have.been.called;
-      });
-
-
-      it('should not emit overviewOpen when already attached', async function() {
-
-        // given
-        const spy = sinon.spy();
-        modeler.on('overviewOpen', spy);
-
-        // when
-        modeler.updateOverview(overviewContainer, true);
-
-        // then
-        expect(spy).to.not.have.been.called;
-      });
-
-
-      it('should not detach if already detached', async function() {
-
-        // given
-        modeler.updateOverview(null, false);
-
-        const spy = sinon.spy(modeler._overview, 'detach');
-
-        // when
-        modeler.updateOverview(null, false);
-
-        // then
-        expect(spy).to.not.have.been.called;
-      });
-
+      // then
+      expect(modeler._overview._container.parentNode).to.not.exist;
     });
 
 
-// helpers //////////
-/**
+    it('should not re-attach if already attached to same parent', async function() {
+
+      // given
+      const spy = sinon.spy(modeler._overview, 'attachTo');
+
+      // when
+      modeler.updateOverview(overviewContainer, true);
+
+      // then
+      expect(spy).to.not.have.been.called;
+    });
+
+
+    it('should emit overviewOpen when open is true', async function() {
+
+      // given
+      modeler.updateOverview(null, false);
+
+      const spy = sinon.spy();
+      modeler.on('overviewOpen', spy);
+
+      // when
+      modeler.updateOverview(overviewContainer, true);
+
+      // then
+      expect(spy).to.have.been.calledOnce;
+    });
+
+
+    it('should not emit overviewOpen when open is false', async function() {
+
+      // given
+      modeler.updateOverview(null, false);
+
+      const spy = sinon.spy();
+      modeler.on('overviewOpen', spy);
+
+      // when
+      modeler.updateOverview(overviewContainer, false);
+
+      // then
+      expect(spy).to.not.have.been.called;
+    });
+
+
+    it('should not emit overviewOpen when already attached', async function() {
+
+      // given
+      const spy = sinon.spy();
+      modeler.on('overviewOpen', spy);
+
+      // when
+      modeler.updateOverview(overviewContainer, true);
+
+      // then
+      expect(spy).to.not.have.been.called;
+    });
+
+
+    it('should not detach if already detached', async function() {
+
+      // given
+      modeler.updateOverview(null, false);
+
+      const spy = sinon.spy(modeler._overview, 'detach');
+
+      // when
+      modeler.updateOverview(null, false);
+
+      // then
+      expect(spy).to.not.have.been.called;
+    });
+
+  });
+
+
+  // helpers //////////
+  /**
  * Create modeler and wait for modeler and overview import to finish before returning modeler.
  *
  * @param {Object} [options]
  *
  * @returns {Object}
  */
-async function createModeler(options = {}) {
-  const modeler = new DmnModeler({
-    ...DEFAULT_OPTIONS,
-    ...options
-  });
-
-  const overviewImport = new Promise(resolve => {
-    modeler._overview.once('views.changed', VERY_LOW_PRIORITY, resolve);
-
-    modeler._overview.on('import.done', ({ err, warnings }) => {
-
-      // assume
-      expect(err).not.to.exist;
-      expect(warnings).to.be.empty;
+  async function createModeler(options = {}) {
+    const modeler = new DmnModeler({
+      ...DEFAULT_OPTIONS,
+      ...options
     });
-  });
 
-  const modelerImport = new Promise(((resolve, reject) => {
-    modeler.once('views.changed', VERY_LOW_PRIORITY, resolve);
+    const overviewImport = new Promise(resolve => {
+      modeler._overview.once('views.changed', VERY_LOW_PRIORITY, resolve);
 
-    modeler.importXML(diagramXML).then(({ warnings }) => {
-
-      try {
+      modeler._overview.on('import.done', ({ err, warnings }) => {
 
         // assume
+        expect(err).not.to.exist;
         expect(warnings).to.be.empty;
-        resolve();
-      } catch (err) {
-        reject(err);
-      }
-    }).catch(err => {
-      expect.fail(`importXML failed: ${err.message}`);
-    });
-  }));
-
-  return Promise.all([ overviewImport, modelerImport ]).then(() => modeler);
-}
-
-
-function openDecisionTable(modeler) {
-  const views = modeler.getViews();
-
-  const view = views.find(({ type }) => type === 'decisionTable');
-
-  return new Promise(resolve => {
-    modeler.once('views.changed', VERY_LOW_PRIORITY, ({ activeView }) => {
-
-      // assume
-      expect(activeView.type).to.equal('decisionTable');
-
-      resolve(activeView);
+      });
     });
 
-    modeler.open(view);
-  });
-}
+    const modelerImport = new Promise(((resolve, reject) => {
+      modeler.once('views.changed', VERY_LOW_PRIORITY, resolve);
 
-function openLiteralExpression(modeler) {
-  const views = modeler.getViews();
+      modeler.importXML(diagramXML).then(({ warnings }) => {
 
-  const view = views.find(({ type }) => type === 'literalExpression');
+        try {
 
-  return new Promise(resolve => {
-    modeler.once('views.changed', VERY_LOW_PRIORITY, ({ activeView }) => {
+          // assume
+          expect(warnings).to.be.empty;
+          resolve();
+        } catch (err) {
+          reject(err);
+        }
+      }).catch(err => {
+        expect.fail(`importXML failed: ${err.message}`);
+      });
+    }));
 
-      // assume
-      expect(activeView.type).to.equal('literalExpression');
+    return Promise.all([ overviewImport, modelerImport ]).then(() => modeler);
+  }
 
-      resolve(activeView);
+
+  function openDecisionTable(modeler) {
+    const views = modeler.getViews();
+
+    const view = views.find(({ type }) => type === 'decisionTable');
+
+    return new Promise(resolve => {
+      modeler.once('views.changed', VERY_LOW_PRIORITY, ({ activeView }) => {
+
+        // assume
+        expect(activeView.type).to.equal('decisionTable');
+
+        resolve(activeView);
+      });
+
+      modeler.open(view);
     });
+  }
 
-    modeler.open(view);
-  });
-}
+  function openLiteralExpression(modeler) {
+    const views = modeler.getViews();
+
+    const view = views.find(({ type }) => type === 'literalExpression');
+
+    return new Promise(resolve => {
+      modeler.once('views.changed', VERY_LOW_PRIORITY, ({ activeView }) => {
+
+        // assume
+        expect(activeView.type).to.equal('literalExpression');
+
+        resolve(activeView);
+      });
+
+      modeler.open(view);
+    });
+  }
 });
