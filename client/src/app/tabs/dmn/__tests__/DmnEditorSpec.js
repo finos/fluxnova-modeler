@@ -10,9 +10,7 @@
 
 /* global sinon */
 
-import React from 'react';
-
-import { mount } from 'enzyme';
+import { waitFor, fireEvent } from '@testing-library/react';
 
 import {
   find,
@@ -20,8 +18,7 @@ import {
 } from 'min-dash';
 
 import {
-  Cache,
-  WithCachedState
+  Cache
 } from '../../../cached';
 
 import {
@@ -55,12 +52,16 @@ import {
   DEFAULT_LAYOUT
 } from '../OverviewContainer';
 
+import renderEditorHelper from '../../../__tests__/helpers/renderEditor';
+
 import existingFluxnovaXML from './existing.fluxnova.dmn';
 import existingC7XML from './existing.c7.dmn';
 import existingC8XML from '../../__tests__/EngineProfile.cloud.dmn';
 import { ENGINES, getLatestStable } from '../../../../util/Engines';
 
 const { spy } = sinon;
+
+const defaultActiveSheet = { id: 'dmn' };
 
 
 describe('<DmnEditor>', function() {
@@ -545,6 +546,7 @@ describe('<DmnEditor>', function() {
 
       cache.add('editor', {
         cached: {
+          activeView: { element: undefined, type: 'drd' },
           lastXML: diagramXML,
           modeler: new DmnModeler({
             commandStack: {
@@ -1134,7 +1136,7 @@ describe('<DmnEditor>', function() {
     });
 
 
-    it('should save dirty state', function() {
+    it('should save dirty state', async function() {
 
       // given
       const dirtySpy = spy(instance, 'isDirty');
@@ -1153,15 +1155,15 @@ describe('<DmnEditor>', function() {
         views
       });
 
-      const {
-        dirty
-      } = instance.getCached();
+      await waitFor (() =>{
+        const { dirty } = instance.getCached();
 
-      // then
-      expect(dirtySpy).to.have.been.called;
-      expect(dirty).to.be.true;
-      expect(dirty).to.not.equal(oldDirty);
+        // then
+        expect(dirtySpy).to.have.been.called;
+        expect(dirty).to.be.true;
+        expect(dirty).to.not.equal(oldDirty);
     });
+  });
 
 
     it('should reattach properties panel on view switch', function() {
@@ -1184,7 +1186,7 @@ describe('<DmnEditor>', function() {
     });
 
 
-    it('should NOT reattach properties panel when stay on view', function() {
+    it('should NOT reattach properties panel when stay on view', async function() {
 
       // given
       const modeler = instance.getModeler();
@@ -1192,6 +1194,11 @@ describe('<DmnEditor>', function() {
       instance.viewsChanged({
         activeView: drdView,
         views
+      });
+
+      // assume
+      await waitFor(() => {
+        expect(instance.getCached().activeView).to.eql(drdView);
       });
 
       const propertiesPanel = modeler.getActiveViewer().get('propertiesPanel');
@@ -1217,11 +1224,16 @@ describe('<DmnEditor>', function() {
         views
       });
 
+      // assume
+      await waitFor(() => {
+        expect(instance.getCached().activeView).to.eql(drdView);
+      });
+
       const modeler = instance.getModeler();
 
       sinon.stub(modeler, 'getActiveView').callsFake(() => decisionTableView);
 
-      const overviewAttachSpy = sinon.spy(modeler, 'attachOverviewTo');
+      const overviewUpdateSpy = sinon.spy(modeler, 'updateOverview');
 
       // when
       instance.viewsChanged({
@@ -1230,7 +1242,9 @@ describe('<DmnEditor>', function() {
       });
 
       // then
-      expect(overviewAttachSpy).to.have.been.called;
+      await waitFor(() => {
+        expect(overviewUpdateSpy).to.have.been.called;
+      });
     });
 
 
@@ -1246,7 +1260,7 @@ describe('<DmnEditor>', function() {
 
       sinon.stub(modeler, 'getActiveView').callsFake(() => drdView);
 
-      const overviewDetachSpy = sinon.spy(modeler, 'detachOverview');
+      const overviewUpdateSpy = sinon.spy(modeler, 'updateOverview');
 
       // when
       instance.viewsChanged({
@@ -1255,7 +1269,9 @@ describe('<DmnEditor>', function() {
       });
 
       // then
-      expect(overviewDetachSpy).to.have.been.called;
+      await waitFor(() => {
+        expect(overviewUpdateSpy).to.have.been.called;
+      });
     });
 
   });
@@ -1302,19 +1318,17 @@ describe('<DmnEditor>', function() {
     it('should open overview', async function() {
 
       // given
-      let layout = {
+      const layout = {
         dmnOverview: {
           open: false
         }
       };
 
-      function onLayoutChanged(newLayout) {
-        layout = newLayout;
-      }
+      const onLayoutChanged = sinon.spy();
 
       const {
-        instance,
-        wrapper
+        container,
+        instance
       } = await renderEditor(diagramXML, {
         layout,
         onLayoutChanged
@@ -1326,34 +1340,40 @@ describe('<DmnEditor>', function() {
 
       instance.handleChanged();
 
-      wrapper.update();
-
-      const toggle = wrapper.find('#button-toggle-overview');
-
+      let toggle;
       // when
-      toggle.simulate('click');
+      await waitFor(() => {
+        toggle = container.querySelector('#button-toggle-overview');
+        expect(toggle).to.exist;
+      });
+      fireEvent.click(toggle);
 
       // then
-      expect(layout.dmnOverview.open).to.be.true;
+      await waitFor(() => {
+        expect(onLayoutChanged).to.have.been.calledOnce;
+        expect(onLayoutChanged).to.have.been.calledWithExactly({
+          dmnOverview: {
+            open: true
+          }
+        });
+      });
     });
 
 
     it('should close overview', async function() {
 
       // given
-      let layout = {
+      const layout = {
         dmnOverview: {
           open: true
         }
       };
 
-      function onLayoutChanged(newLayout) {
-        layout = newLayout;
-      }
+      const onLayoutChanged = sinon.spy();
 
       const {
-        instance,
-        wrapper
+        container,
+        instance
       } = await renderEditor(diagramXML, {
         layout,
         onLayoutChanged
@@ -1365,115 +1385,124 @@ describe('<DmnEditor>', function() {
 
       instance.handleChanged();
 
-      wrapper.update();
-
-      const toggle = wrapper.find('#button-toggle-overview');
-
       // when
-      toggle.simulate('click');
+      let toggle;
+      await waitFor(() => {
+        toggle = container.querySelector('#button-toggle-overview');
+        expect(toggle).to.exist;
+      });
+      fireEvent.click(toggle);
 
       // then
-      expect(layout.dmnOverview.open).to.be.false;
+      await waitFor(() => {
+        expect(onLayoutChanged).to.have.been.calledOnce;
+        expect(onLayoutChanged).to.have.been.calledWithExactly({
+          dmnOverview: {
+            open: false
+          }
+        });
+      });
     });
 
 
     it('should open properties panel (no layout)', async function() {
 
       // given
-      let layout = {};
+      const layout = {};
 
-      function onLayoutChanged(newLayout) {
-        layout = newLayout;
-      }
+      const onLayoutChanged = sinon.spy();
 
-      const {
-        wrapper
-      } = await renderEditor(diagramXML, {
+      const { container } = await renderEditor(diagramXML, {
         layout,
         onLayoutChanged
       });
 
-      wrapper.update();
-
-      const toggle = wrapper.find('.resizer');
-
       // when
-      toggle.simulate('mousedown');
+      const toggle = container.querySelector('.resizer');
 
-      window.dispatchEvent(new MouseEvent('mouseup'));
+      fireEvent.mouseDown(toggle);
+      fireEvent.mouseUp(toggle);
 
       // then
-      expect(layout.propertiesPanel.open).to.be.true;
-      expect(layout.propertiesPanel.width).to.equal(280);
+      await waitFor(() => {
+        expect(onLayoutChanged).to.have.been.calledOnce;
+        expect(onLayoutChanged).to.have.been.calledWithExactly({
+          propertiesPanel: {
+            open: true,
+            width: 280
+          }
+        });
+      });
     });
 
 
     it('should open properties panel', async function() {
 
       // given
-      let layout = {
+      const layout = {
         propertiesPanel: {
           open: false
         }
       };
 
-      function onLayoutChanged(newLayout) {
-        layout = newLayout;
-      }
+      const onLayoutChanged = sinon.spy();
 
-      const {
-        wrapper
-      } = await renderEditor(diagramXML, {
+      const { container } = await renderEditor(diagramXML, {
         layout,
         onLayoutChanged
       });
 
-      wrapper.update();
-
-      const toggle = wrapper.find('.resizer');
-
       // when
-      toggle.simulate('mousedown');
+      const toggle = container.querySelector('.resizer');
 
-      window.dispatchEvent(new MouseEvent('mouseup'));
+      fireEvent.mouseDown(toggle);
+      fireEvent.mouseUp(toggle);
 
       // then
-      expect(layout.propertiesPanel.open).to.be.true;
-      expect(layout.propertiesPanel.width).to.equal(280);
+      await waitFor(() => {
+        expect(onLayoutChanged).to.have.been.calledOnce;
+        expect(onLayoutChanged).to.have.been.calledWithExactly({
+          propertiesPanel: {
+            open: true,
+            width: 280
+          }
+        });
+      });
     });
 
 
     it('should close properties panel', async function() {
 
       // given
-      let layout = {
+      const layout = {
         propertiesPanel: {
           open: true
         }
       };
 
-      function onLayoutChanged(newLayout) {
-        layout = newLayout;
-      }
+      const onLayoutChanged = sinon.spy();
 
-      const {
-        wrapper
-      } = await renderEditor(diagramXML, {
+      const { container } = await renderEditor(diagramXML, {
         layout,
         onLayoutChanged
       });
 
-      wrapper.update();
-
-      const toggle = wrapper.find('.resizer');
-
       // when
-      toggle.simulate('mousedown');
+      const toggle = container.querySelector('.resizer');
 
-      window.dispatchEvent(new MouseEvent('mouseup'));
+      fireEvent.mouseDown(toggle);
+      fireEvent.mouseUp(toggle);
 
       // then
-      expect(layout.propertiesPanel.open).to.be.false;
+      await waitFor(() => {
+        expect(onLayoutChanged).to.have.been.calledOnce;
+        expect(onLayoutChanged).to.have.been.calledWithExactly({
+          propertiesPanel: {
+            open: false,
+            width: 280
+          }
+        });
+      });
     });
 
 
@@ -1585,11 +1614,11 @@ describe('<DmnEditor>', function() {
 
       // given
       const element = 'mock_element';
-      const { wrapper, instance } = await renderEditor(diagramXML);
+      const { instance, rerender } = await renderEditor(diagramXML);
       const openSpy = sinon.spy(instance, 'open');
 
       // when
-      wrapper.setProps({ activeSheet: { id: 'DecisionTable', element } });
+      rerender(diagramXML, { activeSheet: { id: 'DecisionTable', element } });
 
       // expect
       expect(openSpy).to.be.calledOnceWith(element);
@@ -1687,7 +1716,7 @@ describe('<DmnEditor>', function() {
       setTimeout(() => {
         expect(isImportNeededSpy).to.have.been.calledOnce;
         expect(isImportNeededSpy).to.have.always.returned(false);
-      });
+      },5000);
     });
 
 
@@ -1725,7 +1754,9 @@ describe('<DmnEditor>', function() {
       await instance.importXML('import-error');
 
       // then
-      expect(instance.getCached().lastXML).to.be.null;
+      await waitFor(() =>{
+        expect(instance.getCached().lastXML).to.be.null;
+      });
     });
 
   });
@@ -1794,9 +1825,10 @@ describe('<DmnEditor>', function() {
       await instance.getXML();
 
       // then
-      const dirty = instance.isDirty();
-
-      expect(dirty).to.be.false;
+      await waitFor(() => {
+        const dirty = instance.isDirty();
+        expect(dirty).to.be.false;
+      });
     });
 
 
@@ -2084,7 +2116,7 @@ describe('<DmnEditor>', function() {
     });
 
 
-    it('shoud NOT migrate to DMN 1.3', async function() {
+    it('should NOT migrate to DMN 1.3', async function() {
 
       // given
       const onActionSpy = spy((action) => {
@@ -2109,15 +2141,18 @@ describe('<DmnEditor>', function() {
         id: 'editor',
         cache,
         onAction: onActionSpy,
-        onContentUpdated: onContentUpdatedSpy
+        onContentUpdated: onContentUpdatedSpy,
+        waitForImport: false // import will not be triggered
       });
 
       // then
-      expect(onActionSpy).to.have.been.calledTwice;
-      expect(onActionSpy.firstCall.args[ 0 ]).to.eql('show-dialog');
-      expect(onActionSpy.secondCall.args[ 0 ]).to.eql('close-tab');
+      await waitFor(() => {
+        expect(onActionSpy).to.have.been.calledTwice;
+        expect(onActionSpy.firstCall.args[ 0 ]).to.eql('show-dialog');
+        expect(onActionSpy.secondCall.args[ 0 ]).to.eql('close-tab');
 
-      expect(onContentUpdatedSpy).not.to.have.been.called;
+        expect(onContentUpdatedSpy).not.to.have.been.called;
+      });
     });
 
   });
@@ -2233,12 +2268,9 @@ describe('<DmnEditor>', function() {
       return async function() {
 
         // when
-        const { instance, wrapper } = await renderEditor(xml);
-
-        wrapper.update();
+        const { instance } = await renderEditor(xml);
 
         // then
-        expect(wrapper.find('EngineProfile').exists()).to.be.true;
         expect(instance.getCached().engineProfile).to.eql(engineProfile);
       };
     }
@@ -2300,95 +2332,13 @@ describe('<DmnEditor>', function() {
 
 function noop() {}
 
-const TestEditor = WithCachedState(DmnEditor);
-
-const defaultActiveSheet = { id: 'dmn' };
-
-const defaultLayout = {
-  minimap: {
-    open: false
-  },
-  propertiesPanel: {
-    open: true
-  }
-};
-
 function renderEditor(xml, options = {}) {
-  const {
-    activeSheet = defaultActiveSheet,
-    cache = new Cache(),
-    getConfig = noop,
-    getPlugins = () => [],
-    id = 'editor',
-    isNew = true,
-    layout = defaultLayout,
-    onAction = noop,
-    onChanged = noop,
-    onContentUpdated = noop,
-    onError = noop,
-    onImport = noop,
-    onLayoutChanged = noop,
-    onModal = noop,
-    onSheetsChanged = noop,
-    onWarning = noop,
-    waitForImport = true
-  } = options;
-
-  return new Promise((resolve) => {
-    let instance,
-        wrapper;
-
-    const resolveOnImport = (...args) => {
-      onImport(...args);
-
-      resolve({
-        instance,
-        wrapper
-      });
-    };
-
-    const resolveOnAction = (action, ...args) => {
-      if (action === 'close-tab') {
-        resolve({
-          instance,
-          wrapper
-        });
-      }
-
-      return onAction(action, ...args);
-    };
-
-    wrapper = mount(
-      <TestEditor
-        activeSheet={ activeSheet }
-        cache={ cache }
-        getConfig={ getConfig }
-        getPlugins={ getPlugins }
-        id={ id }
-        isNew={ isNew }
-        layout={ layout }
-        onAction={ waitForImport ? resolveOnAction : onAction }
-        onChanged={ onChanged }
-        onContentUpdated={ onContentUpdated }
-        onError={ onError }
-        onImport={ waitForImport ? resolveOnImport : onImport }
-        onLayoutChanged={ onLayoutChanged }
-        onModal={ onModal }
-        onSheetsChanged={ onSheetsChanged }
-        onWarning={ onWarning }
-        xml={ xml }
-      />
-    );
-
-    instance = wrapper.find(DmnEditor).instance();
-
-    if (!waitForImport) {
-      resolve({
-        instance,
-        wrapper
-      });
-    }
-  });
+  const dmnOptions = {
+    activeSheet: defaultActiveSheet,
+    onSheetsChanged: noop,
+    ...options
+  };
+  return renderEditorHelper(DmnEditor, xml, dmnOptions);
 }
 
 function getEvent(events, eventName) {

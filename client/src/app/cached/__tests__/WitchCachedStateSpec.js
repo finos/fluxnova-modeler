@@ -8,9 +8,9 @@
  * except in compliance with the MIT License.
  */
 
-import React from 'react';
+import React, { createRef } from 'react';
 
-import { mount } from 'enzyme';
+import { render, waitFor } from '@testing-library/react';
 
 import {
   Cache,
@@ -24,7 +24,7 @@ describe('WithCachedState', function() {
   it('should render', function() {
 
     // when
-    const instance = render();
+    const instance = renderWithCachedState();
 
     // then
     expect(instance).to.exist;
@@ -42,7 +42,7 @@ describe('WithCachedState', function() {
       }
     });
 
-    const instance = render({ cache });
+    const instance = renderWithCachedState({ cache });
 
     // when
     const cachedState = instance.getCached();
@@ -54,10 +54,10 @@ describe('WithCachedState', function() {
   });
 
 
-  it('#setCached', function() {
+  it('#setCached', async function() {
 
     // given
-    const instance = render();
+    const instance = renderWithCachedState();
 
     // when
     instance.setCached({
@@ -65,16 +65,18 @@ describe('WithCachedState', function() {
     });
 
     // then
-    expect(instance.getCached()).to.eql({
-      foo: 'foo'
+    await waitFor(() => {
+      expect(instance.getCached()).to.eql({
+        foo: 'foo'
+      });
     });
   });
 
 
-  it('#setCached -> #setCached', function() {
+  it('#setCached -> #setCached', async function() {
 
     // given
-    const instance = render();
+    const instance = renderWithCachedState();
 
     // when
     instance.setCached({
@@ -86,9 +88,11 @@ describe('WithCachedState', function() {
     });
 
     // then
-    expect(instance.getCached()).to.eql({
-      foo: 'foo',
-      bar: 'bar'
+    await waitFor(() => {
+      expect(instance.getCached()).to.eql({
+        foo: 'foo',
+        bar: 'bar'
+      });
     });
   });
 
@@ -102,12 +106,17 @@ class Foo extends CachedComponent {
   }
 }
 
-function render(options = {}) {
+function renderWithCachedState(options = {}) {
   const FooWithCachedState = WithCachedState(Foo);
+  const ref = createRef();
 
-  const wrapper = mount(<FooWithCachedState
-    id="foo"
-    cache={ options.cache || new Cache() } />);
+  render(
+    <FooWithCachedState
+      ref={ ref }
+      id="foo"
+      cache={ options.cache || new Cache() }
+    />
+  );
 
-  return wrapper.find(Foo).instance();
+  return ref.current;
 }

@@ -140,19 +140,13 @@ export class DmnEditor extends CachedComponent {
     if (activeViewer) {
       propertiesPanel = activeViewer.get('propertiesPanel', false);
 
-      if (propertiesPanel) {
+      if (propertiesPanel && this.propertiesPanelRef.current) {
         propertiesPanel.attachTo(this.propertiesPanelRef.current);
       }
 
-      // attach overview
-      if (this.overviewRef.current) {
-        modeler.attachOverviewTo(this.overviewRef.current);
-
-        if (isOverviewOpen(this.props)) {
-          modeler._emit('overviewOpen');
-        }
-      }
     }
+
+    this._updateOverview();
 
     this.checkImport();
   }
@@ -167,20 +161,39 @@ export class DmnEditor extends CachedComponent {
     modeler.detach();
   }
 
-  componentDidUpdate(prevProps) {
+  componentDidUpdate(prevProps, prevState) {
     this.checkImport(prevProps);
 
-    // We can only notify interested parties about overview open once its parent component was
-    // rendered
-    if (isOverviewOpened(this.props, prevProps)) {
-      const modeler = this.getModeler();
-
-      modeler._emit('overviewOpen');
+    if (prevState?.importing && !this.state.importing) {
+      this.attachPropertiesPanel();
     }
+
+    this._updateOverview();
 
     if (isCachedStateChange(prevProps, this.props)) {
       this.handleChanged();
     }
+  }
+
+  attachPropertiesPanel() {
+    const modeler = this.getModeler();
+    const activeViewer = modeler.getActiveViewer();
+
+    if (!activeViewer) {
+      return;
+    }
+
+    const propertiesPanel = activeViewer.get('propertiesPanel', false);
+
+    if (propertiesPanel && this.propertiesPanelRef.current) {
+      propertiesPanel.attachTo(this.propertiesPanelRef.current);
+    }
+  }
+
+  _updateOverview() {
+    const modeler = this.getModeler();
+
+    modeler.updateOverview(this.overviewRef.current, isOverviewOpen(this.props));
   }
 
   ifMounted = (fn) => {
@@ -315,21 +328,12 @@ export class DmnEditor extends CachedComponent {
       (!previousActiveView || previousActiveView.element !== activeView.element)) {
       propertiesPanel = activeViewer.get('propertiesPanel', false);
 
-      if (propertiesPanel) {
+      if (propertiesPanel && this.propertiesPanelRef.current) {
         propertiesPanel.attachTo(this.propertiesPanelRef.current);
       }
     }
 
-    // attach or detach overview
-    if (activeView.type === 'drd') {
-      modeler.detachOverview();
-    } else if (previousActiveView && previousActiveView.type === 'drd') {
-      modeler.attachOverviewTo(this.overviewRef.current);
-
-      if (isOverviewOpen(this.props)) {
-        modeler._emit('overviewOpen');
-      }
-    }
+    // attach or detach overview — handled by componentDidUpdate via _updateOverview()
 
     // must be called last
     this.setCached({
@@ -439,7 +443,7 @@ export class DmnEditor extends CachedComponent {
     } else if (activeView.type === 'literalExpression') {
       assign(newState, {
         defaultCopyCutPaste: true,
-        defaultUndoRedo: true,
+        defaultUndoRedo: inputActive,
         removeSelected: true,
         selectAll: true
       });
@@ -455,7 +459,7 @@ export class DmnEditor extends CachedComponent {
       // TODO(@barmac): handle boxed expression differently than literal expression when needed
       assign(newState, {
         defaultCopyCutPaste: true,
-        defaultUndoRedo: true,
+        defaultUndoRedo: inputActive,
         removeSelected: true,
         selectAll: true
       });
@@ -629,7 +633,13 @@ export class DmnEditor extends CachedComponent {
       return;
     }
 
-    this.open(this.props.activeSheet.element);
+    const { activeSheet } = this.props;
+
+    if (!activeSheet?.element) {
+      return;
+    }
+
+    this.open(activeSheet.element);
   }
 
   shouldOpenActiveSheet(prevProps) {

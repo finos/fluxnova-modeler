@@ -78,6 +78,9 @@ class Viewer {
         isFocused() { return true; },
         restoreFocus() {},
       },
+      grid: {
+        toggle() {}
+      },
       commandStack: new CommandStack(),
       executionPlatform: new ExecutionPlatform(),
       propertiesPanel: new PropertiesPanel(),
@@ -113,11 +116,15 @@ class Viewer {
       return null;
     }
 
+    if (this.type !== 'drd' && moduleName === 'grid' && strict === false) {
+      return null;
+    }
+
     if (module) {
       return module;
     }
 
-    if (strict === false) {
+    if (strict !== false) {
       throw new Error(`service not provided: <${moduleName}>`);
     }
 
@@ -219,9 +226,7 @@ export default class Modeler {
 
   detach() {}
 
-  attachOverviewTo() {}
-
-  detachOverview() {}
+  updateOverview() {}
 
   on(event, priority, callback) {
     if (!callback) {

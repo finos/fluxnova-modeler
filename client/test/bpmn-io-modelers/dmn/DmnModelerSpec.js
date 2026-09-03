@@ -29,31 +29,33 @@ const DEFAULT_OPTIONS = {
 
 const VERY_LOW_PRIORITY = 100;
 
-inlineCSS(require('camunda-dmn-js/dist/assets/camunda-platform-modeler.css'));
-
-inlineCSS(`
-  .test-content-container {
-    display: flex;
-    flex-direction: row;
-  }
-
-  .modeler-container,
-  .overview-container {
-    height: 100%;
-  }
-
-  .overview-container {
-    width: 200px;
-  }
-`);
-
 
 describe('DmnModeler', function() {
 
   this.timeout(10000);
 
+  before(function() {
+    inlineCSS(require('camunda-dmn-js/dist/assets/camunda-platform-modeler.css'));
+
+    inlineCSS(`
+      .test-content-container {
+        display: flex;
+        flex-direction: row;
+      }
+
+      .modeler-container,
+      .overview-container {
+        height: 100%;
+      }
+
+      .overview-container {
+        width: 200px;
+      }
+    `);
+  });
+
   let modelerContainer,
-      overviewContainer;
+    overviewContainer;
 
   beforeEach(function() {
     modelerContainer = document.createElement('div');
@@ -282,7 +284,7 @@ describe('DmnModeler', function() {
 
       // given
       const LOWER_PRIORITY = 1000,
-            spy = sinon.spy();
+        spy = sinon.spy();
 
       modeler.on('saveXML.start', LOWER_PRIORITY, spy);
 
@@ -443,7 +445,7 @@ describe('DmnModeler', function() {
 
       // when
       Flags.init({
-        [ ENABLE_NEW_CONTEXT_PAD ]: true
+        [ENABLE_NEW_CONTEXT_PAD]: true
       });
 
       const modeler = await createModeler();
@@ -454,102 +456,201 @@ describe('DmnModeler', function() {
 
   });
 
-});
+  describe('#updateOverview', function() {
+
+    let modeler;
+
+    beforeEach(async function() {
+      modeler = await createModeler({
+        container: modelerContainer
+      });
+
+      modeler.updateOverview(overviewContainer, true);
+    });
+
+    it('should detach overview when parentNode is null', async function() {
+
+      // assume
+      expect(modeler._overview._container.parentNode).to.exist;
+
+      // when
+      modeler.updateOverview(null, true);
+
+      // then
+      expect(modeler._overview._container.parentNode).to.not.exist;
+    });
+
+
+    it('should not re-attach if already attached to same parent', async function() {
+
+      // given
+      const spy = sinon.spy(modeler._overview, 'attachTo');
+
+      // when
+      modeler.updateOverview(overviewContainer, true);
+
+      // then
+      expect(spy).to.not.have.been.called;
+    });
+
+
+    it('should emit overviewOpen when open is true', async function() {
+
+      // given
+      modeler.updateOverview(null, false);
+
+      const spy = sinon.spy();
+      modeler.on('overviewOpen', spy);
+
+      // when
+      modeler.updateOverview(overviewContainer, true);
+
+      // then
+      expect(spy).to.have.been.calledOnce;
+    });
+
+
+    it('should not emit overviewOpen when open is false', async function() {
+
+      // given
+      modeler.updateOverview(null, false);
+
+      const spy = sinon.spy();
+      modeler.on('overviewOpen', spy);
+
+      // when
+      modeler.updateOverview(overviewContainer, false);
+
+      // then
+      expect(spy).to.not.have.been.called;
+    });
+
+
+    it('should not emit overviewOpen when already attached', async function() {
+
+      // given
+      const spy = sinon.spy();
+      modeler.on('overviewOpen', spy);
+
+      // when
+      modeler.updateOverview(overviewContainer, true);
+
+      // then
+      expect(spy).to.not.have.been.called;
+    });
+
+
+    it('should not detach if already detached', async function() {
+
+      // given
+      modeler.updateOverview(null, false);
+
+      const spy = sinon.spy(modeler._overview, 'detach');
+
+      // when
+      modeler.updateOverview(null, false);
+
+      // then
+      expect(spy).to.not.have.been.called;
+    });
+
+  });
+
 
 // helpers //////////
-
-/**
- * Create modeler and wait for modeler and overview import to finish before returning modeler.
- *
- * @param {Object} [options]
- *
- * @returns {Object}
- */
-async function createModeler(options = {}) {
-  const modeler = new DmnModeler({
-    ...DEFAULT_OPTIONS,
-    ...options
-  });
-
-  const overviewImport = new Promise(resolve => {
-    modeler._overview.once('views.changed', VERY_LOW_PRIORITY, resolve);
-
-    modeler._overview.on('import.done', ({ err, warnings }) => {
-
-      // assume
-      expect(err).not.to.exist;
-      expect(warnings).to.be.empty;
+  /**
+   * Create modeler and wait for modeler and overview import to finish before returning modeler.
+   *
+   * @param {Object} [options]
+   *
+   * @returns {Object}
+   */
+  async function createModeler(options = {}) {
+    const modeler = new DmnModeler({
+      ...DEFAULT_OPTIONS,
+      ...options
     });
-  });
 
-  const modelerImport = new Promise(((resolve, reject) => {
-    modeler.once('views.changed', VERY_LOW_PRIORITY, resolve);
+    const overviewImport = new Promise(resolve => {
+      modeler._overview.once('views.changed', VERY_LOW_PRIORITY, resolve);
 
-    modeler.importXML(diagramXML).then(({ warnings }) => {
-
-      try {
+      modeler._overview.on('import.done', ({ err, warnings }) => {
 
         // assume
+        expect(err).not.to.exist;
         expect(warnings).to.be.empty;
-        resolve();
-      } catch (err) {
-        reject(err);
-      }
-    }).catch(err => {
-      expect.fail(`importXML failed: ${err.message}`);
+      });
     });
-  }));
 
-  return Promise.all([ overviewImport, modelerImport ]).then(() => modeler);
-}
+    const modelerImport = new Promise(((resolve, reject) => {
+      modeler.once('views.changed', VERY_LOW_PRIORITY, resolve);
 
-function inlineCSS(css) {
-  var head = document.head || document.getElementsByTagName('head')[ 0 ],
-      style = document.createElement('style');
+      modeler.importXML(diagramXML).then(({ warnings }) => {
 
-  style.type = 'text/css';
+        try {
 
-  if (style.styleSheet) {
-    style.styleSheet.cssText = css;
-  } else {
-    style.appendChild(document.createTextNode(css));
+          // assume
+          expect(warnings).to.be.empty;
+          resolve();
+        } catch (err) {
+          reject(err);
+        }
+      }).catch(err => {
+        expect.fail(`importXML failed: ${err.message}`);
+      });
+    }));
+
+    return Promise.all([ overviewImport, modelerImport ]).then(() => modeler);
   }
 
-  head.appendChild(style);
-}
+  function inlineCSS(css) {
+    var head = document.head || document.getElementsByTagName('head')[0],
+      style = document.createElement('style');
 
-function openDecisionTable(modeler) {
-  const views = modeler.getViews();
+    style.type = 'text/css';
 
-  const view = views.find(({ type }) => type === 'decisionTable');
+    if (style.styleSheet) {
+      style.styleSheet.cssText = css;
+    } else {
+      style.appendChild(document.createTextNode(css));
+    }
 
-  return new Promise(resolve => {
-    modeler.once('views.changed', VERY_LOW_PRIORITY, ({ activeView }) => {
+    head.appendChild(style);
+  }
 
-      // assume
-      expect(activeView.type).to.equal('decisionTable');
+  function openDecisionTable(modeler) {
+    const views = modeler.getViews();
 
-      resolve(activeView);
+    const view = views.find(({ type }) => type === 'decisionTable');
+
+    return new Promise(resolve => {
+      modeler.once('views.changed', VERY_LOW_PRIORITY, ({ activeView }) => {
+
+        // assume
+        expect(activeView.type).to.equal('decisionTable');
+
+        resolve(activeView);
+      });
+
+      modeler.open(view);
     });
+  }
 
-    modeler.open(view);
-  });
-}
+  function openLiteralExpression(modeler) {
+    const views = modeler.getViews();
 
-function openLiteralExpression(modeler) {
-  const views = modeler.getViews();
+    const view = views.find(({ type }) => type === 'literalExpression');
 
-  const view = views.find(({ type }) => type === 'literalExpression');
+    return new Promise(resolve => {
+      modeler.once('views.changed', VERY_LOW_PRIORITY, ({ activeView }) => {
 
-  return new Promise(resolve => {
-    modeler.once('views.changed', VERY_LOW_PRIORITY, ({ activeView }) => {
+        // assume
+        expect(activeView.type).to.equal('literalExpression');
 
-      // assume
-      expect(activeView.type).to.equal('literalExpression');
+        resolve(activeView);
+      });
 
-      resolve(activeView);
+      modeler.open(view);
     });
-
-    modeler.open(view);
-  });
-}
+  }
+});

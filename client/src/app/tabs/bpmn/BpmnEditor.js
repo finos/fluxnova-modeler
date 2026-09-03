@@ -368,7 +368,7 @@ export class BpmnEditor extends CachedComponent {
 
     if (!error) {
       try {
-        this.handleLinting();
+        this.handleLinting(engineProfile);
       } catch (err) {
         error = err;
       }
@@ -421,7 +421,7 @@ export class BpmnEditor extends CachedComponent {
       moveCanvas: canvasFocused,
       moveToOrigin: canvasFocused,
       moveSelection: canvasFocused && !!selectionLength,
-      paste: !modeler.get('clipboard').isEmpty(),
+      paste: true,
       platform: 'platform',
       propertiesPanel: true,
       redo: canvasFocused && commandStack.canRedo(),
@@ -469,11 +469,13 @@ export class BpmnEditor extends CachedComponent {
     }
   };
 
-  handleLinting = () => {
+  handleLinting = (engineProfileOverride) => {
     const {
-      engineProfile,
+      engineProfile: cachedEngineProfile,
       modeler
     } = this.getCached();
+
+    const engineProfile = engineProfileOverride || cachedEngineProfile;
 
     if (!engineProfile) {
       return;
@@ -820,7 +822,7 @@ export class BpmnEditor extends CachedComponent {
       exporter: {
         name,
         version
-      },
+      }
     }, handleMiddlewareExtensions, 'platform');
 
     if (warnings.length && isFunction(onError)) {

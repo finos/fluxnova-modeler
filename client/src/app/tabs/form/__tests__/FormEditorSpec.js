@@ -10,9 +10,9 @@
 
 /* global sinon */
 
-import React from 'react';
+import React, { createRef } from 'react';
 
-import { mount } from 'enzyme';
+import { render, waitFor } from '@testing-library/react';
 
 import {
   Cache,
@@ -551,18 +551,22 @@ describe('<FormEditor>', function() {
       // given
       const { instance } = await renderEditor(schema);
 
+      await waitFor(() => {
       // need to strip out carriage return characters for windows runner
       const strippedInstanceJson = instance.getCached().lastSchema.replace(/[\r]/g, '');
       const strippedSchema = schema.replace(/[\r]/g, '');
 
       // assume
-      expect(strippedInstanceJson).to.equal(strippedSchema);
+        expect(strippedInstanceJson).to.equal(strippedSchema);
+      });
 
       // when
       await instance.importSchema('{ "importError": true }');
 
       // then
-      expect(instance.getCached().lastSchema).to.be.null;
+      await waitFor(() => {
+        expect(instance.getCached().lastSchema).to.be.null;
+      });
     });
 
   });
@@ -631,9 +635,10 @@ describe('<FormEditor>', function() {
       instance.getXML();
 
       // then
-      const dirty = instance.isDirty();
-
-      expect(dirty).to.be.false;
+      await waitFor(() => {
+        const dirty = instance.isDirty();
+        expect(dirty).to.be.false;
+      });
     });
 
   });
@@ -649,14 +654,12 @@ describe('<FormEditor>', function() {
         });
 
         // when
-        const { instance, wrapper } = await renderEditor(schema, { onAction });
-
-        wrapper.update();
+        const { instance } = await renderEditor(schema, { onAction });
 
         // then
-        expect(wrapper.find('EngineProfile').exists()).to.be.true;
-
-        expect(instance.getCached().engineProfile).to.eql(engineProfile);
+        await waitFor(() => {
+          expect(instance.getCached().engineProfile).to.eql(engineProfile);
+        });
       };
     }
 
@@ -688,16 +691,14 @@ describe('<FormEditor>', function() {
     it('should update cached engine profile on change', async function() {
 
       // given
-      const { instance, wrapper } = await renderEditor(engineProfileSchema);
-
-      wrapper.update();
+      const { instance } = await renderEditor(engineProfileSchema);
 
       // assume
-      expect(wrapper.find('EngineProfile').exists()).to.be.true;
-
-      expect(instance.getCached().engineProfile).to.eql({
-        executionPlatform: 'Fluxnova Platform',
-        executionPlatformVersion: '1.0.0'
+      await waitFor(() => {
+        expect(instance.getCached().engineProfile).to.eql({
+          executionPlatform: 'Fluxnova Platform',
+          executionPlatformVersion: '1.0.0'
+        });
       });
 
       // when
@@ -709,9 +710,11 @@ describe('<FormEditor>', function() {
       instance.handleChanged();
 
       // then
-      expect(instance.getCached().engineProfile).to.eql({
-        executionPlatform: 'Fluxnova Platform',
-        executionPlatformVersion: '1.1.0'
+      await waitFor(() => {
+        expect(instance.getCached().engineProfile).to.eql({
+          executionPlatform: 'Fluxnova Platform',
+          executionPlatformVersion: '1.1.0'
+        });
       });
     });
 
@@ -732,11 +735,15 @@ describe('<FormEditor>', function() {
       });
 
       // then
-      expect(onImportSpy).to.have.been.calledOnce;
+      await waitFor(() => {
+        expect(onImportSpy).to.have.been.calledOnce;
+      });
 
-      expect(instance.getCached().engineProfile).to.eql({
-        executionPlatform: 'Fluxnova Platform',
-        executionPlatformVersion: latestStable
+      await waitFor(() => {
+        expect(instance.getCached().engineProfile).to.eql({
+          executionPlatform: 'Fluxnova Platform',
+          executionPlatformVersion: latestStable
+        });
       });
     });
 
@@ -758,14 +765,16 @@ describe('<FormEditor>', function() {
         });
 
         // then
-        const { form } = instance.getCached();
+        await waitFor(() => {
+          const { form } = instance.getCached();
 
-        const calls = onActionSpy.getCalls()
-          .filter(call => call.args[0] === 'lint-tab');
+          const calls = onActionSpy.getCalls()
+            .filter(call => call.args[0] === 'lint-tab');
 
-        // then
-        expect(calls).to.have.lengthOf(1);
-        expect(onActionSpy).to.have.been.calledWith('lint-tab', { contents: form.getSchema() });
+          // then
+          expect(calls).to.have.lengthOf(1);
+          expect(onActionSpy).to.have.been.calledWith('lint-tab', { contents: form.getSchema() });
+        });
       });
 
 
@@ -778,19 +787,30 @@ describe('<FormEditor>', function() {
           onAction: onActionSpy
         });
 
+        // wait for initial lint
+        await waitFor(() => {
+          const { form } = instance.getCached();
+          expect(form).to.exist;
+          const calls = onActionSpy.getCalls()
+            .filter(call => call.args[0] === 'lint-tab');
+          expect(calls).to.have.lengthOf(1);
+        });
+
         // when
         const { form } = instance.getCached();
 
         form._editor._emit('commandStack.changed');
 
-        const calls = onActionSpy.getCalls()
-          .filter(call => call.args[0] === 'lint-tab');
-
         // then
-        expect(calls).to.have.lengthOf(2);
+        await waitFor(() => {
+          const calls = onActionSpy.getCalls()
+            .filter(call => call.args[0] === 'lint-tab');
 
-        calls.forEach(function(call) {
-          expect(call[1] === form.getSchema());
+          expect(calls).to.have.lengthOf(2);
+
+          calls.forEach(function(call) {
+            expect(call[1] === form.getSchema());
+          });
         });
       });
 
@@ -821,15 +841,22 @@ describe('<FormEditor>', function() {
 
         const {
           instance,
-          wrapper
+          unmount
         } = await renderEditor(engineProfileSchema, {
           onAction: onActionSpy
+        });
+
+        // wait for initial lint
+        await waitFor(() => {
+          const calls = onActionSpy.getCalls()
+            .filter(call => call.args[0] === 'lint-tab');
+          expect(calls).to.have.lengthOf(1);
         });
 
         const { form } = instance.getCached();
 
         // when
-        wrapper.unmount();
+        unmount();
 
         form.emit('commandStack.changed');
 
@@ -1099,6 +1126,12 @@ describe('<FormEditor>', function() {
 
       // when
       instance.setState({ triggeredBy: 'foo' });
+
+      // assume
+      await waitFor(() => {
+        expect(instance.state.triggeredBy).to.equal('foo');
+      });
+
       instance.handlePlaygroundLayoutChanged({
         layout
       });
@@ -1135,15 +1168,13 @@ describe('<FormEditor>', function() {
       });
 
       const {
-        wrapper
+        container
       } = await renderEditor(engineProfileSchema, {
         cache,
         onAction: recordActions
       });
 
-      const editor = wrapper.find(FormEditor).getDOMNode();
-
-      const previewContainer = editor.querySelector('.cfp-preview-container');
+      const previewContainer = container.querySelector('.cfp-preview-container');
 
       // when
       previewContainer.dispatchEvent(new Event('focusin', { 'bubbles': true }));
@@ -1160,14 +1191,12 @@ describe('<FormEditor>', function() {
 
       // given
       const {
-        wrapper
+        container
       } = await renderEditor(engineProfileSchema, {
         onAction: recordActions
       });
 
-      const editor = wrapper.find(FormEditor).getDOMNode();
-
-      const previewContainer = editor.querySelector('.cfp-preview-container');
+      const previewContainer = container.querySelector('.cfp-preview-container');
 
       // when
       previewContainer.dispatchEvent(new Event('focusin', { 'bubbles': true }));
@@ -1198,7 +1227,7 @@ describe('<FormEditor>', function() {
 
       const {
         instance,
-        wrapper
+        container
       } = await renderEditor(engineProfileSchema, {
         cache,
         onAction: recordActions
@@ -1207,9 +1236,7 @@ describe('<FormEditor>', function() {
       // when
       instance.listen('off');
 
-      const editor = wrapper.find(FormEditor).getDOMNode();
-
-      const previewContainer = editor.querySelector('.cfp-preview-container');
+      const previewContainer = container.querySelector('.cfp-preview-container');
 
       // when
       previewContainer.dispatchEvent(new Event('focusin', { 'bubbles': true }));
@@ -1239,15 +1266,13 @@ describe('<FormEditor>', function() {
       });
 
       const {
-        wrapper
+        container
       } = await renderEditor(engineProfileSchema, {
         cache,
         onAction: recordActions
       });
 
-      const editor = wrapper.find(FormEditor).getDOMNode();
-
-      const dataContainer = editor.querySelector('.cfp-data-container');
+      const dataContainer = container.querySelector('.cfp-data-container');
 
       // when
       dataContainer.dispatchEvent(new Event('focusin', { 'bubbles': true }));
@@ -1264,14 +1289,12 @@ describe('<FormEditor>', function() {
 
       // given
       const {
-        wrapper
+        container
       } = await renderEditor(engineProfileSchema, {
         onAction: recordActions
       });
 
-      const editor = wrapper.find(FormEditor).getDOMNode();
-
-      const dataContainer = editor.querySelector('.cfp-data-container');
+      const dataContainer = container.querySelector('.cfp-data-container');
 
       // when
       dataContainer.dispatchEvent(new Event('focusin', { 'bubbles': true }));
@@ -1302,7 +1325,7 @@ describe('<FormEditor>', function() {
 
       const {
         instance,
-        wrapper
+        container
       } = await renderEditor(engineProfileSchema, {
         cache,
         onAction: recordActions
@@ -1311,9 +1334,7 @@ describe('<FormEditor>', function() {
       // when
       instance.listen('off');
 
-      const editor = wrapper.find(FormEditor).getDOMNode();
-
-      const dataContainer = editor.querySelector('.cfp-data-container');
+      const dataContainer = container.querySelector('.cfp-data-container');
 
       dataContainer.dispatchEvent(new Event('focusin', { 'bubbles': true }));
       dataContainer.dispatchEvent(new Event('focusout', { 'bubbles': true }));
@@ -1448,21 +1469,22 @@ async function renderEditor(schema, options = {}) {
   } = options;
 
   return new Promise((resolve) => {
-    let instance,
-        wrapper;
+    const ref = createRef();
 
     const resolveOnImport = (...args) => {
       onImport(...args);
 
       resolve({
-        instance,
-        wrapper
+        instance: ref.current,
+        container,
+        unmount
       });
     };
 
-    wrapper = mount(
+    const { container, unmount } = render(
       <SlotFillRoot>
         <TestEditor
+          ref={ ref }
           cache={ cache }
           getConfig={ getConfig }
           id={ id }
@@ -1479,7 +1501,7 @@ async function renderEditor(schema, options = {}) {
       </SlotFillRoot>
     );
 
-    instance = wrapper.find(FormEditor).instance();
+    const instance = ref.current;
 
     // properly mock form playground instantiation
     const { form } = instance.getCached();
@@ -1488,7 +1510,8 @@ async function renderEditor(schema, options = {}) {
     if (!waitForImport) {
       resolve({
         instance,
-        wrapper
+        container,
+        unmount
       });
     }
   });

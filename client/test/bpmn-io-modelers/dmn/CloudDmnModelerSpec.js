@@ -17,6 +17,21 @@ import DrdViewer from '../../../src/app/tabs/dmn/modeler/DrdViewer';
 
 import diagramXML from './diagram.dmn';
 
+function inlineCSS(css) {
+  var head = document.head || document.getElementsByTagName('head')[ 0 ],
+      style = document.createElement('style');
+
+  style.type = 'text/css';
+
+  if (style.styleSheet) {
+    style.styleSheet.cssText = css;
+  } else {
+    style.appendChild(document.createTextNode(css));
+  }
+
+  head.appendChild(style);
+}
+
 const DEFAULT_OPTIONS = {
   exporter: {
     name: 'my-tool',
@@ -27,28 +42,30 @@ const DEFAULT_OPTIONS = {
 
 const VERY_LOW_PRIORITY = 100;
 
-inlineCSS(require('camunda-dmn-js/dist/assets/camunda-cloud-modeler.css'));
-
-inlineCSS(`
-  .test-content-container {
-    display: flex;
-    flex-direction: row;
-  }
-
-  .modeler-container,
-  .overview-container {
-    height: 100%;
-  }
-
-  .overview-container {
-    width: 200px;
-  }
-`);
-
 
 describe('DmnModeler', function() {
 
   this.timeout(10000);
+
+  before(function() {
+    inlineCSS(require('camunda-dmn-js/dist/assets/camunda-cloud-modeler.css'));
+
+    inlineCSS(`
+      .test-content-container {
+        display: flex;
+        flex-direction: row;
+      }
+
+      .modeler-container,
+      .overview-container {
+        height: 100%;
+      }
+
+      .overview-container {
+        width: 200px;
+      }
+    `);
+  });
 
   let modelerContainer,
       overviewContainer;
@@ -215,7 +232,7 @@ describe('DmnModeler', function() {
         container: modelerContainer
       });
 
-      modeler.attachOverviewTo(overviewContainer);
+      modeler.updateOverview(overviewContainer, true);
     });
 
 
@@ -419,10 +436,108 @@ describe('DmnModeler', function() {
     });
   });
 
-});
+  describe('#updateOverview', function() {
+
+      let modeler;
+
+      beforeEach(async function() {
+        modeler = await createModeler({
+          container: modelerContainer
+        });
+
+        modeler.updateOverview(overviewContainer, true);
+      });
+
+      it('should detach overview when parentNode is null', async function() {
+
+        // assume
+        expect(modeler._overview._container.parentNode).to.exist;
+
+        // when
+        modeler.updateOverview(null, true);
+
+        // then
+        expect(modeler._overview._container.parentNode).to.not.exist;
+      });
+
+
+      it('should not re-attach if already attached to same parent', async function() {
+
+        // given
+        const spy = sinon.spy(modeler._overview, 'attachTo');
+
+        // when
+        modeler.updateOverview(overviewContainer, true);
+
+        // then
+        expect(spy).to.not.have.been.called;
+      });
+
+
+      it('should emit overviewOpen when open is true', async function() {
+
+        // given
+        modeler.updateOverview(null, false);
+
+        const spy = sinon.spy();
+        modeler.on('overviewOpen', spy);
+
+        // when
+        modeler.updateOverview(overviewContainer, true);
+
+        // then
+        expect(spy).to.have.been.calledOnce;
+      });
+
+
+      it('should not emit overviewOpen when open is false', async function() {
+
+        // given
+        modeler.updateOverview(null, false);
+
+        const spy = sinon.spy();
+        modeler.on('overviewOpen', spy);
+
+        // when
+        modeler.updateOverview(overviewContainer, false);
+
+        // then
+        expect(spy).to.not.have.been.called;
+      });
+
+
+      it('should not emit overviewOpen when already attached', async function() {
+
+        // given
+        const spy = sinon.spy();
+        modeler.on('overviewOpen', spy);
+
+        // when
+        modeler.updateOverview(overviewContainer, true);
+
+        // then
+        expect(spy).to.not.have.been.called;
+      });
+
+
+      it('should not detach if already detached', async function() {
+
+        // given
+        modeler.updateOverview(null, false);
+
+        const spy = sinon.spy(modeler._overview, 'detach');
+
+        // when
+        modeler.updateOverview(null, false);
+
+        // then
+        expect(spy).to.not.have.been.called;
+      });
+
+    });
+
 
 // helpers //////////
-
 /**
  * Create modeler and wait for modeler and overview import to finish before returning modeler.
  *
@@ -468,20 +583,6 @@ async function createModeler(options = {}) {
   return Promise.all([ overviewImport, modelerImport ]).then(() => modeler);
 }
 
-function inlineCSS(css) {
-  var head = document.head || document.getElementsByTagName('head')[ 0 ],
-      style = document.createElement('style');
-
-  style.type = 'text/css';
-
-  if (style.styleSheet) {
-    style.styleSheet.cssText = css;
-  } else {
-    style.appendChild(document.createTextNode(css));
-  }
-
-  head.appendChild(style);
-}
 
 function openDecisionTable(modeler) {
   const views = modeler.getViews();
@@ -518,3 +619,4 @@ function openLiteralExpression(modeler) {
     modeler.open(view);
   });
 }
+});

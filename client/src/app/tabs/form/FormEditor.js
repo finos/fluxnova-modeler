@@ -256,7 +256,7 @@ export class FormEditor extends CachedComponent {
         stackIdx
       });
 
-      this.handleLinting();
+      this.handleLinting(engineProfile);
     }
 
     this.setState({
@@ -502,8 +502,8 @@ export class FormEditor extends CachedComponent {
 
   onOpenPreview = (context) => this.onTogglePreview(true, context);
 
-  handleLinting = () => {
-    const engineProfile = this.engineProfile.getCached();
+  handleLinting = (engineProfileOverride) => {
+    const engineProfile = engineProfileOverride || this.engineProfile.getCached();
 
     const { form } = this.getCached();
 

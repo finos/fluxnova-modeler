@@ -43,7 +43,7 @@ function getDefaultCockpitUrl(engineUrl) {
 function getDefaultWebAppsBaseUrl(engineUrl) {
   const [ protocol,, host, restRoot ] = engineUrl.split('/');
 
-  return isTomcat(restRoot) ? `${protocol}//${host}/fluxnova/app/` : `${protocol}//${host}/app/`;
+  return isTomcat(restRoot) ? `${protocol}//${host}/fluxnova-monitoring/app/` : `${protocol}//${host}/app/`;
 }
 
 function isTomcat(restRoot) {

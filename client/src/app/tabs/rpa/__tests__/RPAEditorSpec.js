@@ -10,7 +10,7 @@
 
 import React from 'react';
 
-import { mount } from 'enzyme';
+import { render, waitFor } from '@testing-library/react';
 
 import {
   Cache,
@@ -135,9 +135,11 @@ describe('<RPAEditor>', function() {
       await instance.getXML();
 
       // then
+      await waitFor(() => {
       const dirty = instance.isDirty();
 
       expect(dirty).to.be.false;
+      });
     });
 
 
@@ -152,9 +154,12 @@ describe('<RPAEditor>', function() {
       editor.eventBus.fire('model.changed');
 
       // then
-      const dirty = instance.isDirty();
+      // State update is async
+      await waitFor(() => {
+        const dirty = instance.isDirty();
 
-      expect(dirty).to.be.true;
+        expect(dirty).to.be.true;
+      });
     });
 
   });
@@ -242,8 +247,11 @@ function renderEditor(xml, options = {}) {
     });
   }
 
-  const component = mount(
+  const ref = React.createRef();
+
+  const rendered = render(
     <TestEditor
+      ref={ ref }
       id={ id || 'editor' }
       xml={ xml }
       activeSheet={ options.activeSheet || { id: 'xml' } }
@@ -253,12 +261,8 @@ function renderEditor(xml, options = {}) {
     />
   );
 
-  const wrapper = component.find(RPAEditor);
-
-  const instance = wrapper.instance();
-
   return {
-    instance,
-    wrapper
+    ...rendered,
+    instance: ref.current
   };
 }

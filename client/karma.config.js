@@ -33,6 +33,7 @@ process.env.CHROME_BIN = require('puppeteer').executablePath();
 
 // configures browsers to run test against
 // any of [ 'ChromeHeadless', 'Chrome', 'Firefox', 'IE', 'PhantomJS' ]
+var autocleanup = 'test/helper/autocleanup.js';
 
 var suite = 'test/suite.js';
 
@@ -53,18 +54,15 @@ module.exports = function(karma) {
     ],
 
     files: [
+      autocleanup,
       suite
     ],
-    client: {
-      mocha: {
-        timeout: '10000'
-      }
-    },
     preprocessors: {
+      [autocleanup]: [ 'webpack' ],
       [suite]: [ 'webpack', 'env' ]
     },
 
-    reporters: [ 'progress' ].concat(coverage ? 'coverage' : []),
+    reporters: [ 'mocha' ].concat(coverage ? 'coverage' : []),
 
     coverageReporter: {
       reporters: [
@@ -79,9 +77,22 @@ module.exports = function(karma) {
         flags: [ '--no-sandbox' ]
       }
     },
-    browserNoActivityTimeout: 30000,
+
+    browserNoActivityTimeout: 60000,
+    browserDisconnectTolerance: 3,
+    browserSocketTimeout: 60000,
+    browserDisconnectTimeout: 60000,
+    pingTimeout: 60000,
+
     singleRun: true,
     autoWatch: false,
+
+    client: {
+      mocha: {
+        timeout: 10000
+      },
+      captureConsole: false
+    },
 
     webpack: {
       mode: 'none',
@@ -99,13 +110,42 @@ module.exports = function(karma) {
             use: 'babel-loader'
           },
           {
+            test: /\.css$/,
+            use: {
+              loader: 'css-loader',
+              options: {
+                modules: {
+                  mode: 'global',
+                  exportOnlyLocals: true,
+                  localIdentName: '[name]__[local]--[hash:base64:5]'
+                }
+              }
+            }
+          },
+          {
+            test: /\.less$/,
+            use: [
+              {
+                loader: 'css-loader',
+                options: {
+                  modules: {
+                    mode: 'global',
+                    exportOnlyLocals: true,
+                    localIdentName: '[name]__[local]--[hash:base64:5]'
+                  }
+                }
+              },
+              'less-loader'
+            ]
+          },
+          {
             oneOf: [
               {
                 test: /[/\\][A-Z][^/\\]+\.svg$/,
                 use: 'react-svg-loader'
               },
               {
-                test: /\.(css|bpmn|cmmn|dmn|less|xml|png|svg|form|rpa)$/,
+                test: /\.(bpmn|cmmn|dmn|xml|png|svg|form|rpa)$/,
                 type: 'asset/source'
               }
             ]
@@ -114,9 +154,11 @@ module.exports = function(karma) {
       },
       plugins: [
         new DefinePlugin({
-          'process.env': {
-            NODE_ENV: JSON.stringify('test'),
-            WINDOWS: JSON.stringify(windows)
+          'process.env.NODE_ENV': JSON.stringify('test'),
+          'process.env.WINDOWS': JSON.stringify(windows),
+          'process.env.RTL_SKIP_AUTO_CLEANUP': JSON.stringify('true'), // auto-cleanup is configured as beforeEach hook
+          'process': { // must be present to prevent short-circuit in RTL auto-cleanup
+            env: {} // mocks variables set at build time
           }
         })
       ],
@@ -133,6 +175,8 @@ module.exports = function(karma) {
           resourcePath
         ],
         alias: {
+          'react': path.dirname(require.resolve('react/package.json')),
+          'react-dom': path.dirname(require.resolve('react-dom/package.json')),
           'bpmn-js/lib/Modeler': modelers ? 'bpmn-js/lib/Modeler' : 'test/mocks/bpmn-js/Modeler',
           'camunda-bpmn-js/lib/camunda-cloud/Modeler': modelers ? 'camunda-bpmn-js/lib/camunda-cloud/Modeler' : 'test/mocks/bpmn-js/Modeler',
           'camunda-bpmn-js/lib/camunda-platform/Modeler': modelers ? 'camunda-bpmn-js/lib/camunda-platform/Modeler' : 'test/mocks/bpmn-js/Modeler',
@@ -143,7 +187,8 @@ module.exports = function(karma) {
           'sourcemapped-stacktrace': 'test/mocks/sourcemapped-stacktrace',
           './editor/FormEditor': 'test/mocks/form-js',
           '@camunda/linting': 'test/mocks/linting',
-          '@camunda/linting/modeler': 'test/mocks/linting/modeler'
+          '@camunda/linting/modeler': 'test/mocks/linting/modeler',
+          'mixpanel-browser': 'test/mocks/mixpanel-browser'
         }
       },
       devtool: 'eval-cheap-module-source-map'

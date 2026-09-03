@@ -1,0 +1,49 @@
+{
+  "name": "RestrictedExtension",
+  "uri": "http://example.com/schema/restricted",
+  "prefix": "restricted",
+  "xml": {
+    "tagAlias": "lowerCase"
+  },
+  "types": [
+    {
+      "name": "RestrictedCapable",
+      "isAbstract": true,
+      "properties": [
+        {
+          "name": "restricted",
+          "type": "Boolean",
+          "isAttr": true
+        }
+      ]
+    },
+    {
+      "name": "InputParameter",
+      "extends": [
+        "camunda:InputParameter",
+        "RestrictedCapable"
+      ]
+    },
+    {
+      "name": "OutputParameter",
+      "extends": [
+        "camunda:OutputParameter",
+        "RestrictedCapable"
+      ]
+    },
+    {
+      "name": "In",
+      "extends": [
+        "camunda:In",
+        "RestrictedCapable"
+      ]
+    },
+    {
+      "name": "Out",
+      "extends": [
+        "camunda:Out",
+        "RestrictedCapable"
+      ]
+    }
+  ]
+}

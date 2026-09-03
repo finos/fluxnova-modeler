@@ -12,7 +12,7 @@
 
 import React from 'react';
 
-import { shallow } from 'enzyme';
+import { render } from '@testing-library/react';
 
 import { TextInput } from '..';
 
@@ -27,18 +27,18 @@ describe('<TextInput>', function() {
   it('should show error', function() {
 
     // when
-    const wrapper = createTextInput({
+    const { container } = createTextInput({
       fieldMeta: {
         error: 'foo',
         touched: true
       }
     });
 
-    const formControl = wrapper.find('.form-control');
+    const formControl = container.querySelector('.form-control');
 
     // then
-    expect(formControl).to.have.length(1);
-    expect(formControl.hasClass('is-invalid')).to.be.true;
+    expect(formControl).to.exist;
+    expect(formControl.classList.contains('is-invalid')).to.be.true;
   });
 
 
@@ -47,7 +47,9 @@ describe('<TextInput>', function() {
     // given
     const fieldError = sinon.spy();
     const field = {
-      name: 'name'
+      name: 'name',
+      value: '',
+      onChange: () => {}
     };
     const fieldMeta = {
       error: 'foo',
@@ -83,9 +85,15 @@ function createTextInput(options = {}) {
     }
   };
 
-  return shallow(<TextInput
+  const defaultField = {
+    name: 'test',
+    value: '',
+    onChange: () => {}
+  };
+
+  return render(<TextInput
     { ...props }
-    field={ field || {} }
+    field={ { ...defaultField, ...field } }
     form={ form }
   />);
 }
