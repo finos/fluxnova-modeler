@@ -8,12 +8,12 @@
     "test": "echo \"no tests\" && exit 0"
   },
   "devDependencies": {
-    "bpmnlint": "^11.0.0",
-    "bpmnlint-loader": "^0.1.6",
+    "bpmnlint": "11.13.0",
+    "bpmnlint-loader": "0.1.6",
     "bpmnlint-plugin-custom": "file:bpmnlint-plugin-custom",
-    "camunda-modeler-plugin-helpers": "^5.1.0",
-    "npm-run-all2": "^7.0.0",
-    "webpack": "^5.104.1",
-    "webpack-cli": "^6.0.0"
+    "camunda-modeler-plugin-helpers": "5.1.0",
+    "npm-run-all2": "7.0.2",
+    "webpack": "5.110.3",
+    "webpack-cli": "6.0.1"
   }
 }

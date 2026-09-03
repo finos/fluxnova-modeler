@@ -8,8 +8,8 @@
     "test": "echo \"no tests\" && exit 0"
   },
   "devDependencies": {
-    "camunda-modeler-plugin-helpers": "^5.1.0",
-    "webpack": "^5.104.1",
-    "webpack-cli": "^6.0.0"
+    "camunda-modeler-plugin-helpers": "5.1.0",
+    "webpack": "5.110.3",
+    "webpack-cli": "6.0.1"
   }
 }
