@@ -12,20 +12,19 @@
 
 import React from 'react';
 
-import {
-  mount,
-  shallow
-} from 'enzyme';
+import { render, waitFor } from '@testing-library/react';
 
 import PrivacyPreferences from '../PrivacyPreferences';
+
+import { OK_BUTTON_TEXT, CANCEL_BUTTON_TEXT } from '../constants';
+
+import { Config } from '../../../app/__tests__/mocks';
 
 const { spy } = sinon;
 
 describe('<PrivacyPreferences>', function() {
 
   it('should render', async function() {
-
-    // given
     await createPrivacyPreferences();
   });
 
@@ -33,7 +32,7 @@ describe('<PrivacyPreferences>', function() {
   it('should show modal on start if config non existent', async function() {
 
     // when
-    const wrapper = await createPrivacyPreferences({
+    const { getByRole } = await createPrivacyPreferences({
       config: {
         get() {
           return new Promise((resolve, reject) => {
@@ -44,14 +43,16 @@ describe('<PrivacyPreferences>', function() {
     });
 
     // then
-    expect(wrapper.state('showModal')).to.be.true;
+    await waitFor(() => {
+      expect(getByRole('dialog')).to.exist;
+    });
   });
-
+  
 
   it('should not show modal on start if config existent', async function() {
 
     // when
-    const wrapper = await createPrivacyPreferences({
+    const { queryByRole } = await createPrivacyPreferences({
       config: {
         get() {
           return new Promise((resolve, reject) => {
@@ -62,14 +63,14 @@ describe('<PrivacyPreferences>', function() {
     });
 
     // then
-    expect(wrapper.state('showModal')).to.be.false;
+    expect(queryByRole('dialog')).to.be.null;
   });
 
 
   it('should set isInitialPreferences on start if config non existent', async function() {
 
     // when
-    const wrapper = await createPrivacyPreferences({
+    const { queryByRole } = await createPrivacyPreferences({
       config: {
         get() {
           return new Promise((resolve, reject) => {
@@ -80,7 +81,7 @@ describe('<PrivacyPreferences>', function() {
     });
 
     // then
-    expect(wrapper.state('isInitialPreferences')).to.be.true;
+    expect(queryByRole('button', { name: CANCEL_BUTTON_TEXT })).to.not.exist;
   });
 
 
@@ -97,7 +98,8 @@ describe('<PrivacyPreferences>', function() {
             resolve({});
           });
         }
-      }, subscribe: subscribeSpy
+      },
+      subscribe: subscribeSpy
     });
 
     // then
@@ -110,7 +112,7 @@ describe('<PrivacyPreferences>', function() {
     // given
     const setSpy = spy();
 
-    const wrapper = await createPrivacyPreferences({
+    const { getByRole } = await createPrivacyPreferences({
       config: {
         get() {
           return new Promise((resolve, reject) => {
@@ -124,15 +126,18 @@ describe('<PrivacyPreferences>', function() {
           });
         }
       }
-    }, mount);
+    });
 
     // when
-    await wrapper.update();
-
-    wrapper.find('.btn-primary').first().simulate('click');
+    await waitFor(() => {
+      expect(getByRole('dialog')).to.exist;
+    });
+    getByRole('button', { name: OK_BUTTON_TEXT }).click();
 
     // then
-    expect(setSpy).to.have.been.called;
+    await waitFor(() => {
+      expect(setSpy).to.have.been.called;
+    });
   });
 
 
@@ -160,17 +165,20 @@ describe('<PrivacyPreferences>', function() {
       }
     };
 
-    const wrapper = await createPrivacyPreferences({
+    const { queryByRole, getByRole } = await createPrivacyPreferences({
       config, subscribe
-    }, mount);
+    });
+
+    // expected
+    expect(queryByRole('dialog')).to.not.exist;
 
     // when
     await subscribeFunc({});
 
-    await wrapper.update();
-
     // then
-    expect(wrapper.find('.privacyPreferencesField')).to.have.length(1);
+    await waitFor(() => {
+      expect(getByRole('dialog')).to.exist;
+    });
   });
 
 
@@ -181,7 +189,7 @@ describe('<PrivacyPreferences>', function() {
 
     const setSpy = spy();
 
-    const wrapper = await createPrivacyPreferences({
+    const { getByRole } = await createPrivacyPreferences({
       config: {
         get() {
           return Promise.resolve({});
@@ -193,12 +201,14 @@ describe('<PrivacyPreferences>', function() {
       subscribe: (type, func) => {
         subscribeFunc = func;
       }
-    }, mount);
+    });
 
     // when
     await subscribeFunc({});
-    await wrapper.update();
-    wrapper.find('.btn-secondary').simulate('click');
+    await waitFor(() => {
+      expect(getByRole('dialog')).to.exist;
+    });
+    getByRole('button', { name: CANCEL_BUTTON_TEXT }).click();
 
     // then
     expect(setSpy).to.not.have.been.called;
@@ -209,15 +219,15 @@ describe('<PrivacyPreferences>', function() {
 
 // helper ///////////////////
 
-function createPrivacyPreferences(props = {}, mount = shallow) {
+async function createPrivacyPreferences(props = {}) {
   const {
     autoFocusKey,
-    config,
+    config = new Config(),
     triggerAction,
     subscribe
   } = props;
 
-  return mount(
+  return render(
     <PrivacyPreferences
       autoFocusKey={ autoFocusKey }
       config={ config }

@@ -12,7 +12,8 @@
 
 import React from 'react';
 
-import { shallow } from 'enzyme';
+import { render } from '@testing-library/react';
+import { userEvent } from '@testing-library/user-event';
 
 import { Radio } from '..';
 
@@ -27,7 +28,7 @@ describe('<Radio>', function() {
   it('should check option', function() {
 
     // when
-    const wrapper = createRadio({
+    const { container } = createRadio({
       fieldMeta: {
         value: 'foo'
       },
@@ -39,19 +40,19 @@ describe('<Radio>', function() {
       ]
     });
 
-    const checkedInput = wrapper.find('.custom-control-input');
+    const checkedInput = container.querySelectorAll('.custom-control-input');
 
     // then
     expect(checkedInput).to.have.length(1);
-    expect(checkedInput.prop('checked')).to.be.true;
+    expect(checkedInput[0].checked).to.be.true;
   });
 
 
-  it('should apply field\'s onChange callback', function() {
+  it('should apply field\'s onChange callback', async function() {
 
     // given
     const onChange = sinon.spy();
-    const wrapper = createRadio({
+    const { container } = createRadio({
       field: {
         onChange
       },
@@ -62,10 +63,10 @@ describe('<Radio>', function() {
         }
       ]
     });
-    const input = wrapper.find('.custom-control-input');
+    const input = container.querySelector('.custom-control-input');
 
     // when
-    input.simulate('change');
+    await userEvent.click(input);
 
     // then
     expect(onChange).to.have.been.calledOnce;
@@ -83,7 +84,7 @@ function createRadio(options = {}) {
     }
   };
 
-  return shallow(<Radio
+  return render(<Radio
     field={ options.field || {} }
     form={ form }
     values={ options.values || [] }

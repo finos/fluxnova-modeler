@@ -1,0 +1,59 @@
+{
+  "name": "Fluxnova",
+  "uri": "http://fluxnova.finos.org/schema/1.0/bpmn",
+  "prefix": "fluxnova",
+  "xml": {
+    "tagAlias": "lowerCase"
+  },
+  "associations": [],
+  "types": [
+    {
+      "name": "AdHocSubProcess",
+      "isAbstract": true,
+      "extends": [
+        "bpmn:AdHocSubProcess"
+      ],
+      "properties": [
+        {
+          "name": "autoComplete",
+          "isAttr": true,
+          "type": "Boolean"
+        }
+      ]
+    },
+    {
+      "name": "Properties",
+      "superClass": ["Element"],
+      "meta": {
+        "allowedIn": ["*"]
+      },
+      "properties": [
+        {
+          "name": "values",
+          "type": "Property",
+          "isMany": true
+        }
+      ]
+    },
+    {
+      "name": "Property",
+      "superClass": ["Element"],
+      "meta": {
+        "allowedIn": ["*"]
+      },
+      "properties": [
+        {
+          "name": "name",
+          "isAttr": true,
+          "type": "String"
+        },
+        {
+          "name": "value",
+          "isAttr": true,
+          "type": "String"
+        }
+      ]
+    }
+  ],
+  "enumerations": []
+}

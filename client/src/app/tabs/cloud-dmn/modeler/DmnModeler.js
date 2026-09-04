@@ -304,33 +304,56 @@ export default class CamundaDmnModeler extends DmnModeler {
     }
   };
 
-  attachOverviewTo = (parentNode) => {
-    this.detachOverview();
+  updateOverview = (parentNode, open) => {
+    if (!parentNode) {
+      this._detachOverview();
+      return;
+    }
 
+    const attached = this._attachOverview(parentNode);
+
+    if (attached && open) {
+      this._emit('overviewOpen');
+    }
+  };
+
+  _attachOverview(parentNode) {
     const activeViewer = this._overview.getActiveViewer();
 
     if (!activeViewer) {
-      return;
+      return false;
     }
+
+    if (this._overview._container.parentNode === parentNode) {
+      return false;
+    }
+
+    this._detachOverview();
 
     this._emit('attachOverview');
 
     this._overview.attachTo(parentNode);
 
     activeViewer.get('canvas').resized();
-  };
 
-  detachOverview = () => {
+    return true;
+  }
+
+  _detachOverview() {
     const activeViewer = this._overview.getActiveViewer();
 
     if (!activeViewer) {
       return;
     }
 
+    if (!this._overview._container.parentNode) {
+      return;
+    }
+
     this._emit('detachOverview');
 
     this._overview.detach();
-  };
+  }
 }
 
 

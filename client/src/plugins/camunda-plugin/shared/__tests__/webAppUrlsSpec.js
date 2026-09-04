@@ -32,13 +32,13 @@ describe('<webAppUrls>', function() {
     it('should return specific Cockpit link', async function() {
 
       // given
-      stubGetCockpitUrl().returns('http://localhost:18080/fluxnova/app/monitoring/default/#/');
+      stubGetCockpitUrl().returns('http://localhost:18080/fluxnova-monitoring/app/monitoring/default/#/');
 
       // when
       const cockpitUrl = await determineCockpitUrl('http://localhost:18080/fluxnova/rest');
 
       // then
-      expect(cockpitUrl).to.be.equal('http://localhost:18080/fluxnova/app/monitoring/default/#/');
+      expect(cockpitUrl).to.be.equal('http://localhost:18080/fluxnova-monitoring/app/monitoring/default/#/');
     });
 
 
@@ -98,7 +98,7 @@ describe('<webAppUrls>', function() {
       const cockpitUrl = await determineCockpitUrl(engineRestUrl);
 
       // then
-      expect(cockpitUrl).to.be.equal('http://localhost:8080/fluxnova/app/monitoring/default/#/');
+      expect(cockpitUrl).to.be.equal('http://localhost:8080/fluxnova-monitoring/app/monitoring/default/#/');
     });
 
 

@@ -9,11 +9,9 @@
  */
 
 import React from 'react';
-import { mount } from 'enzyme';
-import { RunDialog } from '@camunda/rpa-integration';
+import { render, fireEvent, waitFor } from '@testing-library/react';
 
 import RunButton from '../RunButton';
-import { Overlay } from '../../../../shared/ui';
 import { Slot, SlotFillRoot } from '../../../slot-fill';
 
 import { RPACodeEditor as MockRPACodeEditor } from 'test/mocks/rpa';
@@ -25,24 +23,26 @@ describe('<RunButton>', function() {
   it('should render', function() {
 
     // when
-    const wrapper = renderButton();
+    const { getByRole } = renderButton();
 
     // then
-    expect(wrapper.find('button')).to.have.lengthOf(1);
+    expect(getByRole('button')).to.exist;
   });
 
 
-  it('should open dialog on click', function() {
+  it('should open dialog on click', async function() {
 
     // given
-    const wrapper = renderButton();
-    const button = wrapper.find('button');
+    const { getByRole } = renderButton();
+    const button = getByRole('button');
 
     // when
-    button.simulate('click');
+    button.click();
 
     // then
-    expect(wrapper.find(Overlay)).to.have.lengthOf(1);
+    await waitFor(() => {
+      expect(getByRole('dialog')).to.exist;
+    });
   });
 
 
@@ -52,29 +52,35 @@ describe('<RunButton>', function() {
     const editor = new MockRPACodeEditor({
       state: { workerStatus: 'RUNNING' }
     });
-    const wrapper = renderButton({ editor });
+    const { getByRole } = renderButton({ editor });
 
     // when
     editor.eventBus.fire('dialog.run.open');
-    await wrapper.update();
 
     // then
-    expect(wrapper.find(Overlay)).to.have.lengthOf(1);
+    await waitFor(() => {
+      expect(getByRole('dialog')).to.exist;
+    });
   });
 
 
-  it('should open output panel on close', function() {
+  it('should open output panel on close', async function() {
 
     // given
     const onAction = sinon.spy();
-    const wrapper = renderButton({
+    const { getByRole } = renderButton({
       onAction,
     });
 
-    wrapper.find('button').simulate('click');
+    const button = getByRole('button');
+    button.click();
+
+    await waitFor(() => {
+      expect(getByRole('dialog')).to.exist;
+    });
 
     // when
-    wrapper.find(RunDialog).prop('onSubmit')();
+    fireEvent.submit(getByRole('dialog').querySelector('form'));
 
     // then
     expect(onAction).to.have.been.calledWith('open-panel', { tab: 'RPA-output' });
@@ -92,7 +98,7 @@ function renderButton(props = {}) {
     })
   } = props;
 
-  return mount(<SlotFillRoot>
+  return render(<SlotFillRoot>
     <Slot name="status-bar__file" />
     <RunButton layout={ layout } onAction={ onAction } editor={ editor } />
   </SlotFillRoot>);
