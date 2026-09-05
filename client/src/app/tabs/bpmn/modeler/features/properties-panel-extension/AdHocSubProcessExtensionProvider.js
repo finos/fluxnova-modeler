@@ -38,6 +38,7 @@ export default class AdHocSubProcessExtensionProvider {
 AdHocSubProcessExtensionProvider.$inject = [ 'propertiesPanel' ];
 
 function isAdjacentGroup(group) {
+
   // Position after subprocess-specific groups
   const adjacentGroupIds = [
     'CamundaPlatform__Subprocess',

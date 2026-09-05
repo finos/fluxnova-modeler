@@ -17,13 +17,14 @@
     "all": "run-s clean lint test \"build -- {@}\" --",
     "auto-test": "run-p *:auto-test",
     "clean": "del-cli 'dist/*' app/public",
-    "dev": "npm run preload:build && run-p \"app:dev -- {@}\" client:dev --",
+    "plugins:build": "node tasks/build-plugins.js",
+    "dev": "npm run preload:build && npm run plugins:build && run-p \"app:dev -- {@}\" client:dev --",
     "format": "run-s format:markdown 'lint -- --fix'",
     "format:markdown": "remark . -qo --ignore-pattern dist",
     "get-version": "node app/util/get-version.js",
     "build:distro": "node tasks/distro.js",
     "build:test-distro": "node tasks/test-distro.js",
-    "build": "run-s preload:build client:build \"build:distro -- {@}\" \"build:test-distro -- {@}\" --",
+    "build": "run-s preload:build plugins:build client:build \"build:distro -- {@}\" \"build:test-distro -- {@}\" --",
     "lint": "eslint .",
     "preload:build": "webpack -c webpack.config.js",
     "prerelease": "run-s update-license-book",
@@ -88,6 +89,7 @@
     "webpack-cli": "^6.0.0",
     "yauzl": "^3.1.3"
   },
+  "modelerPlugins": [],
   "remarkConfig": {
     "plugins": [
       "preset-bpmn-io",

@@ -11,3 +11,4 @@ coverage
 tmp
 bin/act
 .idea
+resources/
