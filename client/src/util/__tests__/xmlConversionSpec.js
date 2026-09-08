@@ -107,6 +107,7 @@ describe('util - xmlConversionSpec', function() {
 
       // Verify the exported XML contains fluxnova namespace and elements
       expect(xml).to.contain('xmlns:fluxnova="http://fluxnova.finos.org/schema/1.0/bpmn"');
+
       // Debug: if above fails, log the actual XML
       expect(xml).to.contain('fluxnova:properties');
       expect(xml).to.contain('fluxnova:property');

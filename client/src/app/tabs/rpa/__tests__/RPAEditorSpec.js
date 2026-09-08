@@ -136,9 +136,9 @@ describe('<RPAEditor>', function() {
 
       // then
       await waitFor(() => {
-      const dirty = instance.isDirty();
+        const dirty = instance.isDirty();
 
-      expect(dirty).to.be.false;
+        expect(dirty).to.be.false;
       });
     });
 

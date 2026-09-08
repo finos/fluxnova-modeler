@@ -552,11 +552,12 @@ describe('<FormEditor>', function() {
       const { instance } = await renderEditor(schema);
 
       await waitFor(() => {
-      // need to strip out carriage return characters for windows runner
-      const strippedInstanceJson = instance.getCached().lastSchema.replace(/[\r]/g, '');
-      const strippedSchema = schema.replace(/[\r]/g, '');
 
-      // assume
+        // need to strip out carriage return characters for windows runner
+        const strippedInstanceJson = instance.getCached().lastSchema.replace(/[\r]/g, '');
+        const strippedSchema = schema.replace(/[\r]/g, '');
+
+        // assume
         expect(strippedInstanceJson).to.equal(strippedSchema);
       });
 

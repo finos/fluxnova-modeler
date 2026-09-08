@@ -55,7 +55,7 @@ describe('DmnModeler', function() {
   });
 
   let modelerContainer,
-    overviewContainer;
+      overviewContainer;
 
   beforeEach(function() {
     modelerContainer = document.createElement('div');
@@ -284,7 +284,7 @@ describe('DmnModeler', function() {
 
       // given
       const LOWER_PRIORITY = 1000,
-        spy = sinon.spy();
+            spy = sinon.spy();
 
       modeler.on('saveXML.start', LOWER_PRIORITY, spy);
 
@@ -557,7 +557,7 @@ describe('DmnModeler', function() {
   });
 
 
-// helpers //////////
+  // helpers //////////
   /**
    * Create modeler and wait for modeler and overview import to finish before returning modeler.
    *
@@ -605,7 +605,7 @@ describe('DmnModeler', function() {
 
   function inlineCSS(css) {
     var head = document.head || document.getElementsByTagName('head')[0],
-      style = document.createElement('style');
+        style = document.createElement('style');
 
     style.type = 'text/css';
 

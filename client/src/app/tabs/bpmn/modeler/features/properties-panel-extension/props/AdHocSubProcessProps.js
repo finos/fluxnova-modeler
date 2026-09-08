@@ -96,6 +96,7 @@ function ActiveTasksCollection(props) {
 
     if (value && value.trim()) {
       if (activeTasksProperty) {
+
         // Update existing property
         commands.push({
           cmd: 'element.updateModdleProperties',
@@ -106,6 +107,7 @@ function ActiveTasksCollection(props) {
           }
         });
       } else {
+
         // Create new property
         const property = createElement(
           'fluxnova:Property',
@@ -126,6 +128,7 @@ function ActiveTasksCollection(props) {
         });
       }
     } else if (activeTasksProperty) {
+
       // Remove property if value is empty
       commands.push({
         cmd: 'element.updateModdleProperties',
@@ -207,6 +210,7 @@ function CompletionCondition(props) {
 
     if (value && value.trim()) {
       if (!completionCondition) {
+
         // Create the Expression element
         completionCondition = createElement(
           'bpmn:FormalExpression',
@@ -224,6 +228,7 @@ function CompletionCondition(props) {
           }
         });
       } else {
+
         // Update existing Expression
         commands.push({
           cmd: 'element.updateModdleProperties',
@@ -235,6 +240,7 @@ function CompletionCondition(props) {
         });
       }
     } else if (completionCondition) {
+
       // Remove completion condition if empty
       commands.push({
         cmd: 'element.updateModdleProperties',
@@ -313,6 +319,7 @@ function AutoComplete(props) {
       element,
       moddleElement: businessObject,
       properties: {
+
         // default=true, persist only when false
         autoComplete: value === false ? false : undefined
       }

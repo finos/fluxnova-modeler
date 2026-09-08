@@ -47,7 +47,7 @@ describe('<PrivacyPreferences>', function() {
       expect(getByRole('dialog')).to.exist;
     });
   });
-  
+
 
   it('should not show modal on start if config existent', async function() {
 

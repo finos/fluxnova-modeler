@@ -1162,8 +1162,8 @@ describe('<DmnEditor>', function() {
         expect(dirtySpy).to.have.been.called;
         expect(dirty).to.be.true;
         expect(dirty).to.not.equal(oldDirty);
+      });
     });
-  });
 
 
     it('should reattach properties panel on view switch', function() {
@@ -1341,6 +1341,7 @@ describe('<DmnEditor>', function() {
       instance.handleChanged();
 
       let toggle;
+
       // when
       await waitFor(() => {
         toggle = container.querySelector('#button-toggle-overview');
