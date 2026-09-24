@@ -13,16 +13,16 @@ jobs:
 
     steps:
     - name: Checkout
-      uses: actions/checkout@v6
+      uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
     - name: Use Node.js
-      uses: actions/setup-node@v6
+      uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
       with:
         node-version: 24
         cache: 'npm'
     - name: Install dependencies
       run: npm ci
     - name: Project setup
-      uses: bpmn-io/actions/setup@latest
+      uses: bpmn-io/actions/setup@fbdce57bef1b22a35d2ebf92ac87a5e33b6f8461 # latest
     - name: Build with code coverage
       if: ${{ runner.OS == 'Linux' }}
       run: COVERAGE=1 npm run all -- --x64 --no-compress
@@ -32,7 +32,7 @@ jobs:
     - name: Import Secrets
       if: ${{ runner.OS == 'Linux' }}
       id: secrets
-      uses: hashicorp/vault-action@v3.0.0
+      uses: hashicorp/vault-action@d1720f055e0635fd932a1d2a48f87a666a57906c # v3.0.0
       with:
         url: ${{ secrets.VAULT_ADDR }}
         method: approle
@@ -43,7 +43,7 @@ jobs:
           secret/data/products/desktop-modeler/ci/CODECOV_TOKEN CODECOV_TOKEN;
     - name: Upload coverage
       if: ${{ runner.OS == 'Linux' }}
-      uses: codecov/codecov-action@v5
+      uses: codecov/codecov-action@0fb7174895f61a3b6b78fc075e0cd60383518dac # v5
       with:
         fail_ci_if_error: true
       env:
