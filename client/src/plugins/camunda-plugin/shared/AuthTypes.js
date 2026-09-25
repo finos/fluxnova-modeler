@@ -10,7 +10,8 @@
 
 const AUTH_TYPES = {
   BASIC: 'basic',
-  BEARER: 'bearer'
+  BEARER: 'bearer',
+  OIDC: 'oidc'
 };
 
 export default AUTH_TYPES;

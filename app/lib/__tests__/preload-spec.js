@@ -206,6 +206,29 @@ describe('preload', function() {
 
 
   });
+
+
+  describe('backend#send', function() {
+
+    [
+      'oidc:getToken',
+      'oidc:login',
+      'oidc:logout'
+    ].forEach(event => {
+
+      it(`should allow ${event}`, function() {
+
+        // given
+        const { backend } = createPreload().getAppPreload();
+
+        // when
+        const send = () => backend.send(event, {});
+
+        // then
+        expect(send).not.to.throw();
+      });
+    });
+  });
 });
 
 function createPreload(overrides = {}) {

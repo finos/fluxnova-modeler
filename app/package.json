@@ -22,6 +22,7 @@
     "ids": "^1.0.0",
     "min-dash": "^4.1.1",
     "mri": "^1.1.6",
+    "openid-client": "^5.7.1",
     "parents": "^1.0.1"
   },
   "homepage": "https://github.com/finos/fluxnova-modeler",

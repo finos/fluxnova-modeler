@@ -12,10 +12,13 @@ import AUTH_TYPES from './AuthTypes';
 
 import RestAPI, { ConnectionError, GenericApiErrorMessages, getNetworkErrorCode, getResponseErrorCode } from './RestAPI';
 
+// matches the Fluxnova engine's fluxnova.bpm.jwt.header-name and Control Center's FXN_IDENTITY_HEADER_KEY defaults
+const DEFAULT_IDENTITY_HEADER_NAME = 'x-fxn-identity-token';
+
 export default class CamundaAPI extends RestAPI {
 
-  constructor(endpoint) {
-    super('CamundaAPI', normalizeBaseURL(endpoint.url), getAuthentication(endpoint));
+  constructor(endpoint, oidcAPI) {
+    super('CamundaAPI', normalizeBaseURL(endpoint.url), getAuthentication(endpoint, oidcAPI));
   }
 
   async deployDiagram(diagram, deployment) {
@@ -124,7 +127,7 @@ export default class CamundaAPI extends RestAPI {
   }
 }
 
-function getAuthentication(endpoint) {
+function getAuthentication(endpoint, oidcAPI) {
 
   const {
     authType,
@@ -143,6 +146,37 @@ function getAuthentication(endpoint) {
     return {
       token
     };
+  case AUTH_TYPES.OIDC:
+    if (!oidcAPI) {
+      return;
+    }
+
+    // resolved per request; an unauthenticated result falls through to a 401
+    return async () => {
+      const result = await oidcAPI.getToken(endpoint);
+
+      if (result && result.success) {
+        return {
+          token: result.token,
+          identityHeaderName: endpoint.identityHeaderName || DEFAULT_IDENTITY_HEADER_NAME,
+          identityHeaderPrefix: endpoint.identityHeaderPrefix || ''
+        };
+      }
+    };
+  }
+}
+
+/**
+ * Retrieve the optional oidcAPI global without throwing when it is not registered
+ * (App#getGlobal throws for any key that is not exposed via globals).
+ *
+ * @param { { _getGlobal?: (name: string) => any } } props
+ */
+export function getOidcAPI(props) {
+  try {
+    return props._getGlobal?.('oidcAPI');
+  } catch (error) {
+    return null;
   }
 }
 

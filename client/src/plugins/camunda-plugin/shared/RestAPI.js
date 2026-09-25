@@ -24,7 +24,7 @@ export default class RestAPI {
     const url = `${this.baseUrl}${path}`;
     const headers = {
       ...options.headers,
-      ...this.getHeaders()
+      ...await this.getHeaders()
     };
 
     try {
@@ -47,16 +47,39 @@ export default class RestAPI {
     }
   }
 
-  getHeaders() {
+  async getHeaders() {
     const headers = {
       accept: 'application/json'
     };
 
-    if (this.authentication) {
-      headers.authorization = this.getAuthHeader(this.authentication);
+    const authentication = await this.getAuthentication();
+
+    if (authentication) {
+      if (authentication.identityHeaderName) {
+
+        // aligns with the engine's / Control Center's own configurable identity header
+        headers[authentication.identityHeaderName] = `${authentication.identityHeaderPrefix || ''}${authentication.token}`;
+      } else {
+        const authHeader = this.getAuthHeader(authentication);
+
+        if (authHeader) {
+          headers.authorization = authHeader;
+        }
+      }
     }
 
     return headers;
+  }
+
+  /**
+   * Authentication may be a resolver so that short-lived tokens are fetched per request.
+   */
+  async getAuthentication() {
+    if (typeof this.authentication === 'function') {
+      return await this.authentication();
+    }
+
+    return this.authentication;
   }
 
   getAuthHeader(endpoint) {

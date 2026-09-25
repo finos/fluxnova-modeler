@@ -19,7 +19,9 @@ import DefaultInputValidator from './DefaultInputValidator';
 
 export default class DeploymentConfigValidator {
 
-  constructor() {
+  constructor(oidcAPI) {
+    this.oidcAPI = oidcAPI;
+
     this.endpointURLValidator = new EndpointURLValidator(
       'endpoint.url',
       this.validateNonEmpty,
@@ -51,6 +53,18 @@ export default class DeploymentConfigValidator {
       'Token must not be empty.'
     );
 
+    this.issuerUrlValidator = new DefaultInputValidator(
+      'endpoint.issuerUrl',
+      this.validateNonEmpty,
+      'Issuer URL must not be empty.'
+    );
+
+    this.clientIdValidator = new DefaultInputValidator(
+      'endpoint.clientId',
+      this.validateNonEmpty,
+      'Client ID must not be empty.'
+    );
+
     this.lastConnectionCheckID = 0;
   }
 
@@ -67,6 +81,8 @@ export default class DeploymentConfigValidator {
       if (authType === AUTH_TYPES.BASIC) {
         this.usernameValidator.onExternalError(details, setFieldError);
         this.passwordValidator.onExternalError(details, setFieldError);
+      } else if (authType === AUTH_TYPES.OIDC) {
+        this.issuerUrlValidator.onExternalError(details, setFieldError);
       } else {
         this.tokenValidator.onExternalError(details, setFieldError);
       }
@@ -99,6 +115,14 @@ export default class DeploymentConfigValidator {
     return this.tokenValidator.validate(value, isOnBeforeSubmit);
   };
 
+  validateIssuerUrl = (value, isOnBeforeSubmit) => {
+    return this.issuerUrlValidator.validate(value, isOnBeforeSubmit);
+  };
+
+  validateClientId = (value, isOnBeforeSubmit) => {
+    return this.clientIdValidator.validate(value, isOnBeforeSubmit);
+  };
+
   validatePassword = (value, isOnBeforeSubmit) => {
     return this.passwordValidator.validate(value, isOnBeforeSubmit);
   };
@@ -120,7 +144,9 @@ export default class DeploymentConfigValidator {
       url: this.validateEndpointURL,
       token: endpoint.authType === AUTH_TYPES.BEARER && this.validateToken,
       password: endpoint.authType === AUTH_TYPES.BASIC && this.validatePassword,
-      username: endpoint.authType === AUTH_TYPES.BASIC && this.validateUsername
+      username: endpoint.authType === AUTH_TYPES.BASIC && this.validateUsername,
+      issuerUrl: endpoint.authType === AUTH_TYPES.OIDC && this.validateIssuerUrl,
+      clientId: endpoint.authType === AUTH_TYPES.OIDC && this.validateClientId
     });
   }
 
@@ -154,9 +180,18 @@ export default class DeploymentConfigValidator {
     return errors;
   }
 
+  loginOIDC = async (endpoint) => {
+
+    if (!this.oidcAPI) {
+      return { success: false, reason: 'NOT_AVAILABLE' };
+    }
+
+    return this.oidcAPI.login(endpoint);
+  };
+
   validateConnection = async endpoint => {
 
-    const api = new CamundaAPI(endpoint);
+    const api = new CamundaAPI(endpoint, this.oidcAPI);
 
     try {
       await api.checkConnection();
