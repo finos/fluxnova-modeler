@@ -12,6 +12,7 @@ import Config from './Config';
 import Dialog from './Dialog';
 import FileSystem from './FileSystem';
 import Log from './Log';
+import OIDCAPI from './OIDCAPI';
 import Plugins from './Plugins';
 import SystemClipboard from './SystemClipboard';
 import Workspace from './Workspace';
@@ -33,6 +34,8 @@ export const dialog = new Dialog(backend);
 export const fileSystem = new FileSystem(backend);
 
 export const log = new Log(backend);
+
+export const oidcAPI = new OIDCAPI(backend);
 
 export const plugins = new Plugins(appPlugins);
 

@@ -31,6 +31,7 @@ const Flags = require('./flags');
 const Log = require('./log');
 const logTransports = require('./log/transports');
 const Menu = require('./menu');
+const OIDCAPI = require('./oidc');
 const Platform = require('./platform');
 const Plugins = require('./plugins');
 const WindowManager = require('./window-manager');
@@ -83,6 +84,7 @@ const {
   files,
   flags,
   menu,
+  oidcAPI,
   plugins,
   windowManager,
   zeebeAPI
@@ -280,6 +282,38 @@ renderer.on('zeebe:getGatewayVersion', async function(options, done) {
     const gatewayVersionResponse = await zeebeAPI.getGatewayVersion(options);
 
     done(null, gatewayVersionResponse);
+  } catch (err) {
+    done(err);
+  }
+});
+
+// oidc api //////////
+
+renderer.on('oidc:login', async function(options, done) {
+  try {
+    const result = await oidcAPI.login(options);
+
+    done(null, result);
+  } catch (err) {
+    done(err);
+  }
+});
+
+renderer.on('oidc:getToken', async function(options, done) {
+  try {
+    const result = await oidcAPI.getToken(options);
+
+    done(null, result);
+  } catch (err) {
+    done(err);
+  }
+});
+
+renderer.on('oidc:logout', async function(options, done) {
+  try {
+    const result = await oidcAPI.logout(options);
+
+    done(null, result);
   } catch (err) {
     done(err);
   }
@@ -692,7 +726,10 @@ function bootstrap() {
   // (9) zeebe API
   const zeebeAPI = new ZeebeAPI({ readFile }, Camunda8, flags);
 
-  // (10) connector templates
+  // (10) OIDC API
+  const oidcAPI = new OIDCAPI(browserOpen, log);
+
+  // (11) connector templates
   if (!flags.get('disable-connector-templates', false)) {
     registerConnectorTemplateUpdater(renderer, userPath);
   }
@@ -703,6 +740,7 @@ function bootstrap() {
     files,
     flags,
     menu,
+    oidcAPI,
     plugins,
     windowManager,
     zeebeAPI

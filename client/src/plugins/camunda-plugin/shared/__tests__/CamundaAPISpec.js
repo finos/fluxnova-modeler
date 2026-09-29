@@ -133,6 +133,66 @@ describe('<CamundaAPI>', function() {
     });
 
 
+    it('should deploy with OIDC token using the default identity header', async function() {
+
+      // given
+      const oidcAPI = {
+        getToken: sinon.stub().resolves({ success: true, token: 'OIDC_TOKEN' })
+      };
+
+      const api = new CamundaAPI({
+        url: 'http://foo',
+        authType: 'oidc'
+      }, oidcAPI);
+
+      fetchSpy.resolves(new Response());
+
+      // when
+      const result = await api.deployDiagram(diagram, deployment);
+
+      // then
+      expect(result).to.exist;
+
+      expectFetched(fetchSpy, {
+        headers: {
+          accept: 'application/json',
+          'x-fxn-identity-token': 'OIDC_TOKEN'
+        }
+      });
+    });
+
+
+    it('should deploy with OIDC token using a configured identity header name and prefix', async function() {
+
+      // given
+      const oidcAPI = {
+        getToken: sinon.stub().resolves({ success: true, token: 'OIDC_TOKEN' })
+      };
+
+      const api = new CamundaAPI({
+        url: 'http://foo',
+        authType: 'oidc',
+        identityHeaderName: 'x-custom-identity-header',
+        identityHeaderPrefix: 'Bearer '
+      }, oidcAPI);
+
+      fetchSpy.resolves(new Response());
+
+      // when
+      const result = await api.deployDiagram(diagram, deployment);
+
+      // then
+      expect(result).to.exist;
+
+      expectFetched(fetchSpy, {
+        headers: {
+          accept: 'application/json',
+          'x-custom-identity-header': 'Bearer OIDC_TOKEN'
+        }
+      });
+    });
+
+
     it('should deploy with attachments', async function() {
 
       // given
