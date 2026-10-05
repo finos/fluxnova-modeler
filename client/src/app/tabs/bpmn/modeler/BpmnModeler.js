@@ -19,6 +19,7 @@ import propertiesPanelKeyboardBindingsModule from './features/properties-panel-k
 import propPanelExtensionModule from './features/properties-panel-extension';
 import bpmnFormExtensionProviderModule from './features/properties-panel-form-group';
 import restrictedIoModule from './features/restricted-io';
+import transientIoModule from './features/transient-io';
 
 import lintingAnnotationsModule from '@camunda/linting/modeler';
 
@@ -31,8 +32,14 @@ import popupMenuTracking from 'bpmn-js-tracking/lib/features/popup-menu';
 import paletteTracking from 'bpmn-js-tracking/lib/features/palette';
 
 import { BpmnImprovedCanvasModule } from './features/improved-canvas';
+import CamundaBpmnModdle from '../../../../moddle/camunda-bpmn-moddle';
 import FluxnovaBpmnModdle from '../../../../moddle/fluxnova-bpmn-moddle';
 import FluxnovaModelerModdle from '../../../../moddle/fluxnova-bpmn-modeler-moddle';
+import {
+  denormalizeCamundaTransientAttributes,
+  normalizeRestrictedAttributes,
+  preserveCamundaTransientAttributeStyle
+} from '../../../../util/normalizeBpmnXml';
 
 import Flags, {
   DISABLE_ADJUST_ORIGIN,
@@ -40,6 +47,8 @@ import Flags, {
 } from '../../../../util/Flags';
 
 export default class PlatformBpmnModeler extends BpmnModeler {
+
+  _importedXml = null;
 
   constructor(options = {}) {
 
@@ -65,6 +74,7 @@ export default class PlatformBpmnModeler extends BpmnModeler {
       ...otherOptions,
       additionalModules,
       moddleExtensions: {
+        camunda: CamundaBpmnModdle,
         fluxnova: FluxnovaBpmnModdle,
         modeler: FluxnovaModelerModdle,
         ...moddleExtensions
@@ -74,6 +84,23 @@ export default class PlatformBpmnModeler extends BpmnModeler {
         autoFocus: true
       }
     });
+  }
+
+  async importXML(xml, options) {
+    this._importedXml = normalizeRestrictedAttributes(xml);
+
+    return await super.importXML(this._importedXml, options);
+  }
+
+  async saveXML(options) {
+    const result = await super.saveXML(options);
+    const denormalizedXml = denormalizeCamundaTransientAttributes(result.xml);
+    const normalizedRestrictedXml = normalizeRestrictedAttributes(denormalizedXml);
+
+    return {
+      ...result,
+      xml: preserveCamundaTransientAttributeStyle(this._importedXml, normalizedRestrictedXml)
+    };
   }
 }
 
@@ -88,6 +115,7 @@ const extensionModules = [
   bpmnFormExtensionProviderModule,
   propPanelExtensionModule,
   restrictedIoModule,
+  transientIoModule,
   lintingAnnotationsModule,
   bpmnJSTracking,
   contextPadTracking,

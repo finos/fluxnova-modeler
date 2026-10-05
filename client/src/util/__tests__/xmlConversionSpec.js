@@ -1,9 +1,9 @@
 import { toBpmnXml, toDmnXml, getBpmnDefinitions } from '../xmlConversion';
 import BpmnModdle from 'bpmn-moddle';
 import DmnModdle from 'dmn-moddle';
+import CamundaBpmnModdle from '../../moddle/camunda-bpmn-moddle';
 import FluxnovaBpmnModdle from '../../moddle/fluxnova-bpmn-moddle';
 import FluxnovaModelerModdle from '../../moddle/fluxnova-bpmn-modeler-moddle';
-import CamundaBpmnModdle from 'camunda-bpmn-moddle/resources/camunda';
 
 describe('util - xmlConversionSpec', function() {
 
@@ -76,7 +76,6 @@ describe('util - xmlConversionSpec', function() {
       expect(adHocSubProcess.id).to.equal('AdHocSubProcess_1');
       expect(adHocSubProcess.cancelRemainingInstances).to.equal(true);
 
-      // Verify fluxnova:Properties extension element exists
       const extensionElements = adHocSubProcess.extensionElements;
       expect(extensionElements).to.exist;
 
@@ -87,7 +86,6 @@ describe('util - xmlConversionSpec', function() {
       expect(activeTasksProperty).to.exist;
       expect(activeTasksProperty.value).to.equal('taskA,taskB');
 
-      // Verify completionCondition expression exists
       const completionCondition = adHocSubProcess.completionCondition;
       expect(completionCondition).to.exist;
       expect(completionCondition.body).to.include('approved');
@@ -96,7 +94,6 @@ describe('util - xmlConversionSpec', function() {
 
     it('should export and preserve fluxnova:properties', async function() {
 
-      // Use a single moddle instance for round-trip to ensure consistent serialization
       const moddle = new BpmnModdle({
         modeler: FluxnovaModelerModdle,
         fluxnova: FluxnovaBpmnModdle,
@@ -105,16 +102,11 @@ describe('util - xmlConversionSpec', function() {
       const { rootElement: definitions } = await moddle.fromXML(adHocSubProcessXml);
       const { xml } = await moddle.toXML(definitions, { format: true });
 
-      // Verify the exported XML contains fluxnova namespace and elements
       expect(xml).to.contain('xmlns:fluxnova="http://fluxnova.finos.org/schema/1.0/bpmn"');
-
-      // Debug: if above fails, log the actual XML
       expect(xml).to.contain('fluxnova:properties');
       expect(xml).to.contain('fluxnova:property');
       expect(xml).to.contain('name="activeTasksCollection"');
       expect(xml).to.contain('value="taskA,taskB"');
-
-      // Verify BPMN standard attributes are preserved
       expect(xml).to.contain('completionCondition');
 
     });
@@ -334,6 +326,186 @@ describe('util - xmlConversionSpec', function() {
       expect(exportedXml).to.contain('completionCondition');
     });
 
+  });
+
+  describe('Camunda isTransient support', function() {
+
+    const camundaTransientXml = '<?xml version="1.0" encoding="UTF-8"?>' +
+      '<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"' +
+      '                   xmlns:camunda="http://camunda.org/schema/1.0/bpmn"' +
+      '                   id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn">' +
+      '  <bpmn:process id="Process_1" isExecutable="true">' +
+      '    <bpmn:serviceTask id="Activity_1">' +
+      '      <bpmn:extensionElements>' +
+      '        <camunda:inputOutput>' +
+      '          <camunda:inputParameter name="requiredInput" camunda:isTransient="true">demo</camunda:inputParameter>' +
+      '          <camunda:outputParameter name="result" camunda:isTransient="false">value</camunda:outputParameter>' +
+      '        </camunda:inputOutput>' +
+      '      </bpmn:extensionElements>' +
+      '    </bpmn:serviceTask>' +
+      '    <bpmn:callActivity id="CallActivity_1">' +
+      '      <bpmn:extensionElements>' +
+      '        <camunda:in source="sourceVar" target="targetVar" camunda:isTransient="true" />' +
+      '        <camunda:out source="resultVar" target="outerVar" camunda:isTransient="false" />' +
+      '      </bpmn:extensionElements>' +
+      '    </bpmn:callActivity>' +
+      '  </bpmn:process>' +
+      '</bpmn:definitions>';
+
+    const plainTransientXml = camundaTransientXml
+      .replaceAll(' camunda:isTransient=', ' isTransient=');
+
+    const mixedTransientXml = '<?xml version="1.0" encoding="UTF-8"?>' +
+      '<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"' +
+      '                   xmlns:camunda="http://camunda.org/schema/1.0/bpmn"' +
+      '                   id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn">' +
+      '  <bpmn:process id="Process_1" isExecutable="true">' +
+      '    <bpmn:serviceTask id="Activity_1">' +
+      '      <bpmn:extensionElements>' +
+      '        <camunda:inputOutput>' +
+      '          <camunda:inputParameter name="requiredInput" camunda:isTransient="true">demo</camunda:inputParameter>' +
+      '          <camunda:outputParameter name="result" isTransient="false">value</camunda:outputParameter>' +
+      '        </camunda:inputOutput>' +
+      '      </bpmn:extensionElements>' +
+      '    </bpmn:serviceTask>' +
+      '  </bpmn:process>' +
+      '</bpmn:definitions>';
+
+    const restrictedAndTransientXml = '<?xml version="1.0" encoding="UTF-8"?>' +
+      '<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"' +
+      '                   xmlns:camunda="http://camunda.org/schema/1.0/bpmn"' +
+      '                   id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn">' +
+      '  <bpmn:process id="Process_1" isExecutable="true">' +
+      '    <bpmn:serviceTask id="Activity_1">' +
+      '      <bpmn:extensionElements>' +
+      '        <camunda:inputOutput>' +
+      '          <camunda:inputParameter name="requiredInput" restricted="true" camunda:isTransient="true">demo</camunda:inputParameter>' +
+      '          <camunda:outputParameter name="result" restricted="false" isTransient="false">value</camunda:outputParameter>' +
+      '        </camunda:inputOutput>' +
+      '      </bpmn:extensionElements>' +
+      '    </bpmn:serviceTask>' +
+      '  </bpmn:process>' +
+      '</bpmn:definitions>';
+
+    const fluxnovaRestrictedTransientXml = '<?xml version="1.0" encoding="UTF-8"?>' +
+      '<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"' +
+      '                   xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"' +
+      '                   xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"' +
+      '                   xmlns:modeler="http://fluxnova.finos.org/schema/modeler/1.0"' +
+      '                   xmlns:camunda="http://camunda.org/schema/1.0/bpmn"' +
+      '                   xmlns:di="http://www.omg.org/spec/DD/20100524/DI"' +
+      '                   id="Definitions_1oc37y6"' +
+      '                   targetNamespace="http://bpmn.io/schema/bpmn"' +
+      '                   exporter="Fluxnova Modeler"' +
+      '                   exporterVersion="1.3.2-dev"' +
+      '                   modeler:executionPlatform="Fluxnova Platform"' +
+      '                   modeler:executionPlatformVersion="3.0.0">' +
+      '  <bpmn:process id="Process_1my4l7q" isExecutable="true" camunda:historyTimeToLive="30">' +
+      '    <bpmn:serviceTask id="Activity_11njh03">' +
+      '      <bpmn:extensionElements>' +
+      '        <camunda:inputOutput>' +
+      '          <camunda:inputParameter name="Input_1sfaa6v" isTransient="true" restricted="true" />' +
+      '        </camunda:inputOutput>' +
+      '      </bpmn:extensionElements>' +
+      '    </bpmn:serviceTask>' +
+      '  </bpmn:process>' +
+      '</bpmn:definitions>';
+
+    it('should parse camunda:isTransient on parameters but not In/Out mappings', async function() {
+      const definitions = await getBpmnDefinitions(camundaTransientXml, 'bpmn');
+      const serviceTask = definitions.rootElements[0].flowElements.find((element) => element.id === 'Activity_1');
+      const callActivity = definitions.rootElements[0].flowElements.find((element) => element.id === 'CallActivity_1');
+      const inputOutput = serviceTask.extensionElements.values[0];
+      const inMapping = callActivity.extensionElements.values.find((value) => value.$type === 'camunda:In');
+      const outMapping = callActivity.extensionElements.values.find((value) => value.$type === 'camunda:Out');
+
+      expect(inputOutput.inputParameters[0].get('isTransient')).to.equal(true);
+      expect(inputOutput.outputParameters[0].get('isTransient')).to.equal(false);
+      expect(inMapping.get('isTransient')).to.be.undefined;
+      expect(outMapping.get('isTransient')).to.be.undefined;
+    });
+
+    it('should import and serialize without switching to the fluxnova namespace', async function() {
+      const moddle = new BpmnModdle({
+        camunda: CamundaBpmnModdle,
+        fluxnova: FluxnovaBpmnModdle,
+        modeler: FluxnovaModelerModdle
+      });
+
+      const { rootElement: definitions } = await moddle.fromXML(camundaTransientXml);
+      const { xml } = await toBpmnXml(definitions);
+
+      expect(xml).to.not.contain('fluxnova:isTransient');
+      expect(xml).to.contain('camunda:inputParameter');
+      expect(xml).to.contain('camunda:outputParameter');
+      expect(xml).to.contain('camunda:in');
+      expect(xml).to.contain('camunda:out');
+      expect(xml).to.contain(' isTransient="true"');
+      expect(xml).to.contain(' isTransient="false"');
+      expect(xml).to.not.contain('camunda:isTransient=');
+      expect(xml).to.match(/<camunda:in\b[^>]*isTransient="true"/);
+      expect(xml).to.match(/<camunda:out\b[^>]*isTransient="false"/);
+    });
+
+    it('should parse plain isTransient on parameters but leave In/Out mappings untyped', async function() {
+      const definitions = await getBpmnDefinitions(plainTransientXml, 'bpmn');
+      const serviceTask = definitions.rootElements[0].flowElements.find((element) => element.id === 'Activity_1');
+      const callActivity = definitions.rootElements[0].flowElements.find((element) => element.id === 'CallActivity_1');
+      const inputOutput = serviceTask.extensionElements.values[0];
+      const inMapping = callActivity.extensionElements.values.find((value) => value.$type === 'camunda:In');
+      const outMapping = callActivity.extensionElements.values.find((value) => value.$type === 'camunda:Out');
+
+      expect(inputOutput.inputParameters[0].get('isTransient')).to.equal(true);
+      expect(inputOutput.outputParameters[0].get('isTransient')).to.equal(false);
+      expect(inMapping.get('isTransient')).to.equal('true');
+      expect(outMapping.get('isTransient')).to.equal('false');
+    });
+
+    it('should export plain isTransient by default', async function() {
+      const moddle = new BpmnModdle({
+        camunda: CamundaBpmnModdle,
+        fluxnova: FluxnovaBpmnModdle,
+        modeler: FluxnovaModelerModdle
+      });
+
+      const { rootElement: definitions } = await moddle.fromXML(plainTransientXml);
+      const { xml } = await toBpmnXml(definitions);
+
+      expect(xml).to.contain(' isTransient="true"');
+      expect(xml).to.contain(' isTransient="false"');
+      expect(xml).to.not.contain('camunda:isTransient=');
+      expect(xml).to.match(/<camunda:in\b[^>]*isTransient="true"/);
+      expect(xml).to.match(/<camunda:out\b[^>]*isTransient="false"/);
+    });
+
+    it('should keep parsing mixed transient attribute styles', async function() {
+      const definitions = await getBpmnDefinitions(mixedTransientXml, 'bpmn');
+      const serviceTask = definitions.rootElements[0].flowElements.find((element) => element.id === 'Activity_1');
+      const inputOutput = serviceTask.extensionElements.values[0];
+
+      expect(inputOutput.inputParameters[0].get('isTransient')).to.equal(true);
+      expect(inputOutput.outputParameters[0].get('isTransient')).to.equal(false);
+    });
+
+    it('should parse restricted attributes together with transient attributes', async function() {
+      const definitions = await getBpmnDefinitions(restrictedAndTransientXml, 'bpmn');
+      const serviceTask = definitions.rootElements[0].flowElements.find((element) => element.id === 'Activity_1');
+      const inputOutput = serviceTask.extensionElements.values[0];
+
+      expect(inputOutput.inputParameters[0].get('restricted')).to.equal(true);
+      expect(inputOutput.inputParameters[0].get('isTransient')).to.equal(true);
+      expect(inputOutput.outputParameters[0].get('restricted')).to.equal(false);
+      expect(inputOutput.outputParameters[0].get('isTransient')).to.equal(false);
+    });
+
+    it('should parse Fluxnova BPMN with self-closing restricted and plain transient attributes', async function() {
+      const definitions = await getBpmnDefinitions(fluxnovaRestrictedTransientXml, 'bpmn');
+      const serviceTask = definitions.rootElements[0].flowElements.find((element) => element.id === 'Activity_11njh03');
+      const inputOutput = serviceTask.extensionElements.values[0];
+
+      expect(inputOutput.inputParameters[0].get('restricted')).to.equal(true);
+      expect(inputOutput.inputParameters[0].get('isTransient')).to.equal(true);
+    });
   });
 
 });

@@ -58,6 +58,85 @@ const { spy } = sinon;
 
 let onAction;
 
+const camundaTransientXML = `<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+                  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+                  xmlns:camunda="http://camunda.org/schema/1.0/bpmn"
+                  id="Definitions_1"
+                  targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:process id="Process_1" isExecutable="true">
+    <bpmn:startEvent id="StartEvent_1" />
+    <bpmn:serviceTask id="Activity_1">
+      <bpmn:extensionElements>
+        <camunda:inputOutput>
+          <camunda:inputParameter name="requiredInput" camunda:isTransient="true">demo</camunda:inputParameter>
+          <camunda:outputParameter name="result" camunda:isTransient="false">value</camunda:outputParameter>
+        </camunda:inputOutput>
+      </bpmn:extensionElements>
+    </bpmn:serviceTask>
+    <bpmn:endEvent id="EndEvent_1" />
+    <bpmn:sequenceFlow id="Flow_1" sourceRef="StartEvent_1" targetRef="Activity_1" />
+    <bpmn:sequenceFlow id="Flow_2" sourceRef="Activity_1" targetRef="EndEvent_1" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Process_1" />
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>`;
+
+const restrictedAndTransientXML = `<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+                  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+                  xmlns:camunda="http://camunda.org/schema/1.0/bpmn"
+                  id="Definitions_1"
+                  targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:process id="Process_1" isExecutable="true">
+    <bpmn:startEvent id="StartEvent_1" />
+    <bpmn:serviceTask id="Activity_1">
+      <bpmn:extensionElements>
+        <camunda:inputOutput>
+          <camunda:inputParameter name="requiredInput" restricted="true" camunda:isTransient="true">demo</camunda:inputParameter>
+          <camunda:outputParameter name="result" restricted="false" isTransient="false">value</camunda:outputParameter>
+        </camunda:inputOutput>
+      </bpmn:extensionElements>
+    </bpmn:serviceTask>
+    <bpmn:endEvent id="EndEvent_1" />
+    <bpmn:sequenceFlow id="Flow_1" sourceRef="StartEvent_1" targetRef="Activity_1" />
+    <bpmn:sequenceFlow id="Flow_2" sourceRef="Activity_1" targetRef="EndEvent_1" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Process_1" />
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>`;
+
+const fluxnovaRestrictedTransientXML = `<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+                  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+                  xmlns:modeler="http://fluxnova.finos.org/schema/modeler/1.0"
+                  xmlns:camunda="http://camunda.org/schema/1.0/bpmn"
+                  xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+                  id="Definitions_1oc37y6"
+                  targetNamespace="http://bpmn.io/schema/bpmn"
+                  exporter="Fluxnova Modeler"
+                  exporterVersion="1.3.2-dev"
+                  modeler:executionPlatform="Fluxnova Platform"
+                  modeler:executionPlatformVersion="3.0.0">
+  <bpmn:process id="Process_1my4l7q" isExecutable="true" camunda:historyTimeToLive="30">
+    <bpmn:serviceTask id="Activity_11njh03">
+      <bpmn:extensionElements>
+        <camunda:inputOutput>
+          <camunda:inputParameter name="Input_1sfaa6v" isTransient="true" restricted="true" />
+        </camunda:inputOutput>
+      </bpmn:extensionElements>
+    </bpmn:serviceTask>
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Process_1my4l7q" />
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>`;
+
 describe('<BpmnEditor>', function() {
 
   beforeEach(function() {
@@ -1435,6 +1514,66 @@ describe('<BpmnEditor>', function() {
       expect(isImportNeededSpy).to.be.called;
       expect(isImportNeededSpy).to.have.always.returned(false);
 
+    });
+
+
+    it('should import camunda:isTransient without warnings', async function() {
+
+      // given
+      const onImportSpy = spy((error, warnings) => {
+
+        // then
+        expect(error).to.not.exist;
+        expect(warnings).to.be.empty;
+      });
+
+      // when
+      await renderEditor(camundaTransientXML, {
+        onImport: onImportSpy
+      });
+
+      // then
+      expect(onImportSpy).to.have.been.calledOnce;
+    });
+
+
+    it('should import restricted and transient BPMN attributes without warnings', async function() {
+
+      // given
+      const onImportSpy = spy((error, warnings) => {
+
+        // then
+        expect(error).to.not.exist;
+        expect(warnings).to.be.empty;
+      });
+
+      // when
+      await renderEditor(restrictedAndTransientXML, {
+        onImport: onImportSpy
+      });
+
+      // then
+      expect(onImportSpy).to.have.been.calledOnce;
+    });
+
+
+    it('should import Fluxnova BPMN restricted and plain transient attributes without warnings', async function() {
+
+      // given
+      const onImportSpy = spy((error, warnings) => {
+
+        // then
+        expect(error).to.not.exist;
+        expect(warnings).to.be.empty;
+      });
+
+      // when
+      await renderEditor(fluxnovaRestrictedTransientXML, {
+        onImport: onImportSpy
+      });
+
+      // then
+      expect(onImportSpy).to.have.been.calledOnce;
     });
 
 

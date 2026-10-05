@@ -3,11 +3,9 @@ import {
   isCheckboxEntryEdited
 } from '@bpmn-io/properties-panel';
 
-const SUPPORTED_RESTRICTED_TYPES = new Set([
+const SUPPORTED_TRANSIENT_TYPES = new Set([
   'camunda:InputParameter',
-  'camunda:OutputParameter',
-  'camunda:In',
-  'camunda:Out'
+  'camunda:OutputParameter'
 ]);
 
 // groups rendered by bpmn-js-element-templates for template-bound input/output properties
@@ -18,7 +16,7 @@ const ELEMENT_TEMPLATES_IO_GROUPS = new Set([
 
 const ELEMENT_TEMPLATES_CUSTOM_PROPERTIES_GROUP = 'ElementTemplates__CustomProperties';
 
-export default class RestrictedIOPlugin {
+export default class TransientIOPlugin {
   constructor(propertiesPanel, commandStack, CheckboxEntry = DefaultCheckboxEntry) {
     this.commandStack = commandStack;
     this.CheckboxEntry = CheckboxEntry;
@@ -26,21 +24,20 @@ export default class RestrictedIOPlugin {
   }
 
   getGroups(element) {
-
     return (groups) => {
-      const { inputOutput, inOutMappings } = this.getRestrictedCandidates(element);
+      const { inputOutput, inOutMappings } = this.getTransientCandidates(element);
       const inputParams = (inputOutput && inputOutput.inputParameters) || [];
       const outputParams = (inputOutput && inputOutput.outputParameters) || [];
 
       groups
-        .filter(g => g.id && (
-          g.id.startsWith('CamundaPlatform__') ||
-          ELEMENT_TEMPLATES_IO_GROUPS.has(g.id) ||
-          g.id.startsWith(ELEMENT_TEMPLATES_CUSTOM_PROPERTIES_GROUP)
+        .filter(group => group.id && (
+          group.id.startsWith('CamundaPlatform__') ||
+          ELEMENT_TEMPLATES_IO_GROUPS.has(group.id) ||
+          group.id.startsWith(ELEMENT_TEMPLATES_CUSTOM_PROPERTIES_GROUP)
         ))
         .forEach(group => {
           if (group.id.startsWith(ELEMENT_TEMPLATES_CUSTOM_PROPERTIES_GROUP)) {
-            this.addRestrictedEntriesToCustomProperties(group, { inputParams, outputParams });
+            this.addTransientEntriesToCustomProperties(group, { inputParams, outputParams });
             return;
           }
 
@@ -56,11 +53,11 @@ export default class RestrictedIOPlugin {
               groupId: group.id
             });
 
-            if (!parameter || !SUPPORTED_RESTRICTED_TYPES.has(parameter.$type)) {
+            if (!parameter || !SUPPORTED_TRANSIENT_TYPES.has(parameter.$type)) {
               return;
             }
 
-            this.insertRestrictedEntry(item, parameter);
+            this.insertTransientEntry(item, parameter);
           });
         });
 
@@ -68,7 +65,7 @@ export default class RestrictedIOPlugin {
     };
   }
 
-  addRestrictedEntriesToCustomProperties(group, { inputParams, outputParams }) {
+  addTransientEntriesToCustomProperties(group, { inputParams, outputParams }) {
     if (!Array.isArray(group.entries)) {
       return;
     }
@@ -76,15 +73,15 @@ export default class RestrictedIOPlugin {
     group.entries.slice().forEach(entry => {
       const parameter = this.getParameterForElementTemplateProperty(entry.property, { inputParams, outputParams });
 
-      if (!parameter || !SUPPORTED_RESTRICTED_TYPES.has(parameter.$type)) {
+      if (!parameter || !SUPPORTED_TRANSIENT_TYPES.has(parameter.$type)) {
         return;
       }
 
-      this.insertRestrictedEntryAfter(group.entries, entry, parameter);
+      this.insertTransientEntryAfter(group.entries, entry, parameter);
     });
   }
 
-  getRestrictedCandidates(element) {
+  getTransientCandidates(element) {
     const bo = element.businessObject;
     const ext = bo.extensionElements;
 
@@ -96,28 +93,32 @@ export default class RestrictedIOPlugin {
     }
 
     return {
-      inputOutput: ext.values.find(v => v.$type === 'camunda:InputOutput') || null,
-      inOutMappings: ext.values.filter(v => v.$type === 'camunda:In' || v.$type === 'camunda:Out')
+      inputOutput: ext.values.find(value => value.$type === 'camunda:InputOutput') || null,
+      inOutMappings: ext.values.filter(value => value.$type === 'camunda:In' || value.$type === 'camunda:Out')
     };
   }
 
   getParameterForItem(item, { inputParams, outputParams, inOutMappings, groupId }) {
     if (groupId === 'CamundaPlatform__In' || groupId === 'CamundaPlatform__Out') {
-      const anyMappingEntry = item.entries.find(e => e && e.mapping);
-      if (anyMappingEntry) return anyMappingEntry.mapping;
-      return inOutMappings.find(m => m.id && m.id === item.id) || null;
+      const anyMappingEntry = item.entries.find(entry => entry && entry.mapping);
+
+      if (anyMappingEntry) {
+        return anyMappingEntry.mapping;
+      }
+
+      return inOutMappings.find(mapping => mapping.id && mapping.id === item.id) || null;
     }
 
     // Element Templates render dedicated Input/Output groups; the underlying
     // camunda:InputParameter/OutputParameter (when assigned) is exposed on the
     // "local variable assignment" / "process variable assignment" entry.
     if (groupId === 'ElementTemplates__Input') {
-      const entry = item.entries.find(e => e && e.inputParameter);
+      const entry = item.entries.find(entry => entry && entry.inputParameter);
       return entry ? entry.inputParameter : null;
     }
 
     if (groupId === 'ElementTemplates__Output') {
-      const entry = item.entries.find(e => e && e.outputParameter);
+      const entry = item.entries.find(entry => entry && entry.outputParameter);
       return entry ? entry.outputParameter : null;
     }
 
@@ -131,8 +132,8 @@ export default class RestrictedIOPlugin {
       const paramName = item.label || item.id;
 
       return (
-        inputParams.find(p => p.name === paramName) ||
-        outputParams.find(p => p.name === paramName) ||
+        inputParams.find(parameter => parameter.name === paramName) ||
+        outputParams.find(parameter => parameter.name === paramName) ||
         null
       );
     }
@@ -174,13 +175,13 @@ export default class RestrictedIOPlugin {
   }
 
   getParameterFromEntries(entries) {
-    const localEntry = entries.find(e => e && e.id && e.id.endsWith('-local') && e.mapping);
+    const localEntry = entries.find(entry => entry && entry.id && entry.id.endsWith('-local') && entry.mapping);
 
     if (localEntry && localEntry.mapping) {
       return localEntry.mapping;
     }
 
-    const parameterEntry = entries.find(e => e && (e.parameter || e.mapping));
+    const parameterEntry = entries.find(entry => entry && (entry.parameter || entry.mapping));
 
     if (!parameterEntry) {
       return null;
@@ -189,84 +190,88 @@ export default class RestrictedIOPlugin {
     return parameterEntry.parameter || parameterEntry.mapping;
   }
 
-  insertRestrictedEntry(item, parameter) {
-    const restrictedEntryId = `restricted-${item.id}`;
+  insertTransientEntry(item, parameter) {
+    const transientEntryId = `transient-${item.id}`;
+    const hasTransientEntry = item.entries.some(entry => entry && entry.id === transientEntryId);
 
-    const hasRestrictedEntry = item.entries.some(entry => entry && entry.id === restrictedEntryId);
-
-    if (hasRestrictedEntry) {
+    if (hasTransientEntry) {
       return;
     }
 
-    const restrictedEntry = {
-      id: restrictedEntryId,
-      component: this.RestrictedCheckbox,
+    const transientEntry = {
+      id: transientEntryId,
+      component: this.TransientCheckbox,
       type: 'input',
       parameter,
       isEdited: isCheckboxEntryEdited
     };
+
+    const restrictedIndex = item.entries.findIndex(entry => entry && entry.id === `restricted-${item.id}`);
+
+    if (restrictedIndex !== -1) {
+      item.entries.splice(restrictedIndex + 1, 0, transientEntry);
+      return;
+    }
 
     const localIndex = item.entries.findIndex(entry => entry && entry.id && entry.id.endsWith('-local'));
 
     if (localIndex !== -1) {
-      item.entries.splice(localIndex + 1, 0, restrictedEntry);
+      item.entries.splice(localIndex + 1, 0, transientEntry);
       return;
     }
 
-    item.entries.push(restrictedEntry);
+    item.entries.push(transientEntry);
   }
 
-  insertRestrictedEntryAfter(entries, entry, parameter) {
-    const restrictedEntryId = `restricted-${entry.id}`;
-    const hasRestrictedEntry = entries.some(existingEntry => existingEntry && existingEntry.id === restrictedEntryId);
+  insertTransientEntryAfter(entries, entry, parameter) {
+    const transientEntryId = `transient-${entry.id}`;
+    const hasTransientEntry = entries.some(existingEntry => existingEntry && existingEntry.id === transientEntryId);
 
-    if (hasRestrictedEntry) {
+    if (hasTransientEntry) {
       return;
     }
 
-    const restrictedEntry = {
-      id: restrictedEntryId,
-      component: this.RestrictedCheckbox,
+    const transientEntry = {
+      id: transientEntryId,
+      component: this.TransientCheckbox,
       type: 'input',
       parameter,
       isEdited: isCheckboxEntryEdited
     };
 
-    const entryIndex = entries.indexOf(entry);
+    const restrictedIndex = entries.findIndex(existingEntry => existingEntry && existingEntry.id === `restricted-${entry.id}`);
 
-    if (entryIndex === -1) {
-      entries.push(restrictedEntry);
+    if (restrictedIndex !== -1) {
+      entries.splice(restrictedIndex + 1, 0, transientEntry);
       return;
     }
 
-    entries.splice(entryIndex + 1, 0, restrictedEntry);
+    const entryIndex = entries.indexOf(entry);
+
+    if (entryIndex === -1) {
+      entries.push(transientEntry);
+      return;
+    }
+
+    entries.splice(entryIndex + 1, 0, transientEntry);
   }
 
-  getInputOutput(element) {
-    const bo = element.businessObject;
-    const ext = bo.extensionElements;
-    if (!ext) return null;
-
-    return ext.values.find(v => v.$type === 'camunda:InputOutput');
-  }
-
-
-  RestrictedCheckbox = (props)=> {
+  TransientCheckbox = (props) => {
     const { element, parameter } = props;
 
     return this.CheckboxEntry({
       element,
-      id: 'restricted',
-      label: 'Restricted',
+      id: 'isTransient',
+      label: 'Transient',
       getValue: () => {
-        return !!parameter.get('restricted');
+        return !!parameter.get('isTransient');
       },
       setValue: (value) => {
         this.commandStack.execute('element.updateModdleProperties', {
-          element: element, // the task shape
-          moddleElement: parameter, // the actual parameter moddle element
+          element,
+          moddleElement: parameter,
           properties: {
-            restricted: !!value
+            isTransient: !!value
           }
         });
       }
@@ -274,7 +279,7 @@ export default class RestrictedIOPlugin {
   };
 }
 
-RestrictedIOPlugin.$inject = [
+TransientIOPlugin.$inject = [
   'propertiesPanel',
   'commandStack'
 ];

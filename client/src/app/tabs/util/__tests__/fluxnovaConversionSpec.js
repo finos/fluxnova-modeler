@@ -25,6 +25,25 @@ describe('tabs/bpmn/util - fluxnovaConversion', function() {
     </bpmn:definitions>
   `;
 
+  const camundaNsRestrictedTransientBpmn = `
+    <?xml version="1.0" encoding="UTF-8"?>
+    <bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:camunda="http://camunda.org/schema/1.0/bpmn" id="Definitions_1ug79wa" targetNamespace="http://bpmn.io/schema/bpmn" xmlns:modeler="http://camunda.org/schema/modeler/1.0" exporter="Camunda Modeler" exporterVersion="5.33.0-dev" modeler:executionPlatform="Camunda Platform" modeler:executionPlatformVersion="1.0.0">
+      <bpmn:process id="Process_10ga7ii" isExecutable="true">
+        <bpmn:serviceTask id="Activity_1">
+          <bpmn:extensionElements>
+            <camunda:inputOutput>
+              <camunda:inputParameter name="Input_1" camunda:isTransient="true" restricted="true" />
+              <camunda:outputParameter name="Output_1" isTransient="false" restricted="false" />
+            </camunda:inputOutput>
+          </bpmn:extensionElements>
+        </bpmn:serviceTask>
+      </bpmn:process>
+      <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+        <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Process_10ga7ii" />
+      </bpmndi:BPMNDiagram>
+    </bpmn:definitions>
+  `;
+
   const camunda8Bpmn = `
     <?xml version="1.0" encoding="UTF-8"?>
     <bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" id="Definitions_1ug79wa" targetNamespace="http://bpmn.io/schema/bpmn" xmlns:modeler="http://camunda.org/schema/modeler/1.0" exporter="Camunda Modeler" exporterVersion="5.33.0-dev" modeler:executionPlatform="Camunda Cloud" modeler:executionPlatformVersion="1.0.0">
@@ -147,6 +166,19 @@ describe('tabs/bpmn/util - fluxnovaConversion', function() {
         expect(conversion).not.to.contain('modeler:executionPlatform="Camunda Platform"');
 
         expect(onAction).not.to.have.been.calledWith('close-tab');
+        expect(onContentChanged).to.have.been.called;
+
+      });
+
+      it('non fluxnova bpmn with restricted and transient attributes', async function() {
+
+        const conversion = await convertBpmnToFluxnovaIfRequired(camundaNsRestrictedTransientBpmn, onAction, onContentChanged);
+
+        expect(onAction).to.have.been.calledWith('show-dialog');
+        expect(conversion).to.contain('restricted="true"');
+        expect(conversion).to.contain('restricted="false"');
+        expect(conversion).to.contain('isTransient="true"');
+        expect(conversion).to.contain('isTransient="false"');
         expect(onContentChanged).to.have.been.called;
 
       });

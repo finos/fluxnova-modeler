@@ -9,12 +9,19 @@
  */
 
 import BpmnModdle from 'bpmn-moddle';
+import CamundaBpmnModdle from '../../../../moddle/camunda-bpmn-moddle';
+import FluxnovaBpmnModdle from '../../../../moddle/fluxnova-bpmn-moddle';
+import FluxnovaModelerModdle from '../../../../moddle/fluxnova-bpmn-modeler-moddle';
 
 import {
   find
 } from 'min-dash';
 
-var moddle = new BpmnModdle();
+var moddle = new BpmnModdle({
+  camunda: CamundaBpmnModdle,
+  fluxnova: FluxnovaBpmnModdle,
+  modeler: FluxnovaModelerModdle
+});
 
 export default async function isExecutable(xml) {
 

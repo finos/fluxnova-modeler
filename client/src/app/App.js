@@ -72,7 +72,9 @@ import * as css from './App.less';
 
 import Notifications, { NOTIFICATION_TYPES } from './notifications';
 import { RecentTabs } from './RecentTabs';
-import CamundaBpmnModdle from 'camunda-bpmn-moddle/resources/camunda';
+import CamundaBpmnModdle from '../moddle/camunda-bpmn-moddle';
+import FluxnovaBpmnModdle from '../moddle/fluxnova-bpmn-moddle';
+import FluxnovaModelerModdle from '../moddle/fluxnova-bpmn-modeler-moddle';
 
 const log = debug('App');
 
@@ -960,9 +962,11 @@ export class App extends PureComponent {
     }
 
     if (isString(contents) && tab.type === 'bpmn') {
-      const moddle = new BpmnModdle(
-        { camunda: CamundaBpmnModdle }
-      );
+      const moddle = new BpmnModdle({
+        camunda: CamundaBpmnModdle,
+        fluxnova: FluxnovaBpmnModdle,
+        modeler: FluxnovaModelerModdle
+      });
       const { rootElement } = await moddle.fromXML(contents);
       contents = rootElement;
     }

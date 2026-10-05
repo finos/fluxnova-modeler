@@ -61,6 +61,7 @@ describe('RestrictedIOPlugin', function() {
                 outputParameters: [
                   {
                     name: 'output1',
+                    value: '${ result }',
                     $type: 'camunda:OutputParameter',
                     get: sinon.stub().returns(true)
                   }
@@ -202,10 +203,10 @@ describe('RestrictedIOPlugin', function() {
       expect(restrictedEntries).to.have.lengthOf(1);
     });
 
-    it('should not modify non-CamundaPlatform groups', function() {
+    it('should not modify unrelated groups', function() {
       const groups = [
         {
-          id: 'ElementTemplates__Input',
+          id: 'SomeOtherGroup',
           items: [
             {
               id: 'templated-item',
@@ -221,6 +222,156 @@ describe('RestrictedIOPlugin', function() {
       const entries = resultGroups[0].items[0].entries;
 
       expect(entries.some(e => e.id === 'restricted-templated-item')).to.be.false;
+    });
+
+    it('should add restricted entry to ElementTemplates__Input group item with an assigned inputParameter', function() {
+      const templateInputParameter = {
+        id: 'input1',
+        $type: 'camunda:InputParameter',
+        get: sinon.stub().withArgs('restricted').returns(false)
+      };
+
+      const groups = [
+        {
+          id: 'ElementTemplates__Input',
+          items: [
+            {
+              id: 'templated-item-1',
+              entries: [
+                { id: 'templated-item-1-description' },
+                { id: 'templated-item-1-local-variable-assignment', inputParameter: templateInputParameter }
+              ]
+            }
+          ]
+        }
+      ];
+
+      const resultGroups = plugin.getGroups(element)(groups);
+      const entries = resultGroups[0].items[0].entries;
+
+      expect(entries.some(e => e.id === 'restricted-templated-item-1')).to.be.true;
+    });
+
+    it('should add restricted entry to ElementTemplates__Output group item with an assigned outputParameter', function() {
+      const templateOutputParameter = {
+        id: 'output1',
+        $type: 'camunda:OutputParameter',
+        get: sinon.stub().withArgs('restricted').returns(false)
+      };
+
+      const groups = [
+        {
+          id: 'ElementTemplates__Output',
+          items: [
+            {
+              id: 'templated-item-2',
+              entries: [
+                { id: 'templated-item-2-local-variable-assignment', outputParameter: templateOutputParameter }
+              ]
+            }
+          ]
+        }
+      ];
+
+      const resultGroups = plugin.getGroups(element)(groups);
+      const entries = resultGroups[0].items[0].entries;
+
+      expect(entries.some(e => e.id === 'restricted-templated-item-2')).to.be.true;
+    });
+
+    it('should not add restricted entry to ElementTemplates__Input group item without an assigned parameter', function() {
+      const groups = [
+        {
+          id: 'ElementTemplates__Input',
+          items: [
+            {
+              id: 'templated-item-3',
+              entries: [
+                { id: 'templated-item-3-local-variable-assignment', inputParameter: undefined }
+              ]
+            }
+          ]
+        }
+      ];
+
+      const resultGroups = plugin.getGroups(element)(groups);
+      const entries = resultGroups[0].items[0].entries;
+
+      expect(entries.some(e => e.id === 'restricted-templated-item-3')).to.be.false;
+    });
+
+    it('should add restricted entry after typed ElementTemplates__CustomProperties input entries', function() {
+      const groups = [
+        {
+          id: 'ElementTemplates__CustomProperties',
+          entries: [
+            {
+              id: 'custom-input',
+              property: {
+                type: 'String',
+                binding: {
+                  type: 'camunda:inputParameter',
+                  name: 'input1'
+                }
+              }
+            }
+          ]
+        }
+      ];
+
+      const entries = plugin.getGroups(element)(groups)[0].entries;
+      const inputIndex = entries.findIndex(entry => entry.id === 'custom-input');
+
+      expect(entries[inputIndex + 1].id).to.equal('restricted-custom-input');
+    });
+
+    it('should add restricted entry after typed grouped ElementTemplates__CustomProperties output entries', function() {
+      const groups = [
+        {
+          id: 'ElementTemplates__CustomProperties-email',
+          entries: [
+            {
+              id: 'custom-output',
+              property: {
+                type: 'String',
+                binding: {
+                  type: 'camunda:outputParameter',
+                  source: '${ result }'
+                }
+              }
+            }
+          ]
+        }
+      ];
+
+      const entries = plugin.getGroups(element)(groups)[0].entries;
+      const outputIndex = entries.findIndex(entry => entry.id === 'custom-output');
+
+      expect(entries[outputIndex + 1].id).to.equal('restricted-custom-output');
+    });
+
+    it('should not add restricted entry to typed custom properties without a matching parameter', function() {
+      const groups = [
+        {
+          id: 'ElementTemplates__CustomProperties',
+          entries: [
+            {
+              id: 'missing-custom-input',
+              property: {
+                type: 'String',
+                binding: {
+                  type: 'camunda:inputParameter',
+                  name: 'missingInput'
+                }
+              }
+            }
+          ]
+        }
+      ];
+
+      const entries = plugin.getGroups(element)(groups)[0].entries;
+
+      expect(entries.some(entry => entry.id === 'restricted-missing-custom-input')).to.be.false;
     });
   });
 

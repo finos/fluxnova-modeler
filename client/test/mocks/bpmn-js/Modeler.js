@@ -9,10 +9,17 @@
  */
 
 import BpmnModdle from 'bpmn-moddle';
+import camundaModdle from '../../../src/moddle/camunda-bpmn-moddle';
+import fluxnovaModdle from '../../../src/moddle/fluxnova-bpmn-moddle';
+import fluxnovaModelerModdle from '../../../src/moddle/fluxnova-bpmn-modeler-moddle';
 
 import { assign } from 'min-dash';
 
-const moddle = new BpmnModdle();
+const moddle = new BpmnModdle({
+  camunda: camundaModdle,
+  fluxnova: fluxnovaModdle,
+  modeler: fluxnovaModelerModdle
+});
 
 
 export class CommandStack {

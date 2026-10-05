@@ -13,13 +13,15 @@ import { is } from 'bpmn-js/lib/util/ModelUtil';
 import BpmnModdle from 'bpmn-moddle';
 import DmnModdle from 'dmn-moddle';
 
-import CamundaBpmnModdle from 'camunda-bpmn-moddle/resources/camunda';
 import CamundaDmnModdle from 'camunda-dmn-moddle/resources/camunda';
 import ZeebeBpmnModdle from 'zeebe-bpmn-moddle/resources/zeebe';
+import CamundaBpmnModdle from '../moddle/camunda-bpmn-moddle';
 import FluxnovaModelerModdle from '../moddle/fluxnova-bpmn-modeler-moddle';
 import FluxnovaBpmnModdle from '../moddle/fluxnova-bpmn-moddle';
-
 import { selfAndAllFlowElements } from './elementsUtil';
+import {
+  denormalizeCamundaTransientAttributes
+} from './normalizeBpmnXml';
 import parseExecutionPlatform from '../app/util/parseExecutionPlatform';
 import { ENGINES } from './Engines';
 
@@ -173,7 +175,12 @@ export async function toBpmnXml(definitions) {
   };
 
   const moddle = new BpmnModdle(extensions);
-  return await moddle.toXML(definitions, { format: true });
+  const result = await moddle.toXML(definitions, { format: true });
+
+  return {
+    ...result,
+    xml: denormalizeCamundaTransientAttributes(result.xml)
+  };
 }
 
 export async function toDmnXml(definitions) {
