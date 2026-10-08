@@ -331,6 +331,69 @@ export default class CamundaDmnModeler extends DmnModeler {
 
     this._overview.detach();
   };
+
+  /**
+   * Attach or detach overview based on the provided parent node.
+   * Idempotent — safe to call on every render from componentDidUpdate.
+   *
+   * @param {Element|null} parentNode - DOM node to attach to, or null to detach
+   * @param {boolean} open - whether the overview is currently open
+   */
+  updateOverview = (parentNode, open) => {
+    if (!parentNode) {
+      this._detachOverview();
+      return;
+    }
+
+    const attached = this._attachOverview(parentNode);
+
+    if (attached && open) {
+      this._emit('overviewOpen');
+    }
+  };
+
+  _attachOverview(parentNode) {
+    const activeViewer = this._overview.getActiveViewer();
+
+    if (!activeViewer) {
+      return false;
+    }
+
+    // Already attached to same node — no-op
+    if (this._overview._container.parentNode === parentNode) {
+      return false;
+    }
+
+    this._detachOverview();
+
+    this._emit('attachOverview');
+
+    this._overview.attachTo(parentNode);
+
+    activeViewer.get('canvas').resized();
+
+    const activeView = this.getActiveView();
+
+    if (activeView && activeView.type !== 'drd') {
+      activeViewer.get('eventBus').fire('drgElementOpened', {
+        id: activeView.element.id
+      });
+    }
+
+    return true;
+  }
+
+  _detachOverview() {
+    const activeViewer = this._overview.getActiveViewer();
+
+    if (!activeViewer || !this._overview._container.parentNode) {
+      return;
+    }
+
+    this._emit('detachOverview');
+
+    this._overview.detach();
+  }
 }
 
 

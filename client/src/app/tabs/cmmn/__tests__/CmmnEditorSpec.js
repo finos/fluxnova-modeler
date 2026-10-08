@@ -10,13 +10,10 @@
 
 /* global sinon */
 
-import React from 'react';
-
-import { mount } from 'enzyme';
+import { waitFor, fireEvent } from '@testing-library/react';
 
 import {
   Cache,
-  WithCachedState
 } from '../../../cached';
 
 import {
@@ -35,16 +32,19 @@ import {
 } from '../../getEditMenu';
 
 import diagramXML from './diagram.cmmn';
+import renderEditorHelper from '../../../__tests__/helpers/renderEditor';
 
 const { spy } = sinon;
 
+const defaultActiveSheet = { id: 'cmmn' };
 
 describe('<CmmnEditor>', function() {
 
-  it('should render', function() {
+
+  it('should render', async function() {
     const {
       instance
-    } = renderEditor(diagramXML);
+    } = await renderEditor(diagramXML);
 
     expect(instance).to.exist;
   });
@@ -63,12 +63,12 @@ describe('<CmmnEditor>', function() {
     });
 
 
-    it('should create modeler if not cached', function() {
+    it('should create modeler if not cached', async function() {
 
       // when
       const {
         instance
-      } = renderEditor(diagramXML);
+      } = await renderEditor(diagramXML);
 
       // then
       const {
@@ -121,7 +121,7 @@ describe('<CmmnEditor>', function() {
   it('#getXML', async function() {
     const {
       instance
-    } = renderEditor(diagramXML);
+    } = await renderEditor(diagramXML);
 
     const xml = await instance.getXML();
 
@@ -138,8 +138,8 @@ describe('<CmmnEditor>', function() {
 
     let instance;
 
-    beforeEach(function() {
-      instance = renderEditor(diagramXML).instance;
+    beforeEach(async function() {
+      instance = (await renderEditor(diagramXML)).instance;
     });
 
 
@@ -225,7 +225,7 @@ describe('<CmmnEditor>', function() {
 
   describe('#handleChanged', function() {
 
-    it('should notify about changes', function() {
+    it('should notify about changes', async function() {
 
       // given
       const changedSpy = sinon.spy();
@@ -254,10 +254,11 @@ describe('<CmmnEditor>', function() {
         __destroy: () => {}
       });
 
-      const { instance } = renderEditor(diagramXML, {
+      const { instance } = await renderEditor(diagramXML, {
         id: 'editor',
         cache,
-        onChanged: changedSpy
+        onChanged: changedSpy,
+        waitForImport: false
       });
 
       changedSpy.resetHistory();
@@ -467,7 +468,7 @@ describe('<CmmnEditor>', function() {
 
   describe('layout', function() {
 
-    it('should open properties panel', function() {
+    it('should open properties panel', async function() {
 
       // given
       let layout = {
@@ -481,16 +482,16 @@ describe('<CmmnEditor>', function() {
       }
 
       const {
-        wrapper
-      } = renderEditor(diagramXML, {
+        container
+      } = await renderEditor(diagramXML, {
         layout,
         onLayoutChanged
       });
 
-      const toggle = wrapper.find('.resizer');
+      const toggle = container.querySelector('.resizer');
 
       // when
-      toggle.simulate('mousedown');
+      fireEvent.mouseDown(toggle);
 
       window.dispatchEvent(new MouseEvent('mouseup'));
 
@@ -499,7 +500,7 @@ describe('<CmmnEditor>', function() {
     });
 
 
-    it('should close properties panel', function() {
+    it('should close properties panel', async function() {
 
       // given
       let layout = {
@@ -513,16 +514,16 @@ describe('<CmmnEditor>', function() {
       }
 
       const {
-        wrapper
-      } = renderEditor(diagramXML, {
+        container
+      } = await renderEditor(diagramXML, {
         layout,
         onLayoutChanged
       });
 
-      const toggle = wrapper.find('.resizer');
+      const toggle = container.querySelector('.resizer');
 
       // when
-      toggle.simulate('mousedown');
+      fireEvent.mouseDown(toggle);
 
       window.dispatchEvent(new MouseEvent('mouseup'));
 
@@ -555,7 +556,7 @@ describe('<CmmnEditor>', function() {
 
       const {
         instance
-      } = renderEditor('export-error', {
+      } = await renderEditor('export-error', {
         onError: errorSpy
       });
 
@@ -669,7 +670,8 @@ describe('<CmmnEditor>', function() {
       });
 
       await renderEditor(diagramXML, {
-        cache
+        cache,
+        waitForImport: false
       });
 
       // then
@@ -726,8 +728,8 @@ describe('<CmmnEditor>', function() {
 
     let instance;
 
-    beforeEach(function() {
-      instance = renderEditor(diagramXML).instance;
+    beforeEach(async function() {
+      instance = (await renderEditor(diagramXML)).instance;
     });
 
 
@@ -785,9 +787,10 @@ describe('<CmmnEditor>', function() {
       await instance.getXML();
 
       // then
-      const dirty = instance.isDirty();
-
-      expect(dirty).to.be.false;
+      await waitFor(() => {
+        const dirty = instance.isDirty();
+        expect(dirty).to.be.false;
+      });
     });
 
   });
@@ -933,46 +936,10 @@ describe('<CmmnEditor>', function() {
 
 // helpers //////////
 
-function noop() {}
-
-const TestEditor = WithCachedState(CmmnEditor);
-
 function renderEditor(xml, options = {}) {
-  const {
-    onAction,
-    layout,
-    onChanged,
-    onError,
-    onImport,
-    onLayoutChanged
-  } = options;
-
-  const wrapper = mount(
-    <TestEditor
-      id={ options.id || 'editor' }
-      xml={ xml }
-      activeSheet={ options.activeSheet || { id: 'cmmn' } }
-      onAction={ onAction || noop }
-      onChanged={ onChanged || noop }
-      onError={ onError || noop }
-      onImport={ onImport || noop }
-      onLayoutChanged={ onLayoutChanged || noop }
-      cache={ options.cache || new Cache() }
-      layout={ layout || {
-        minimap: {
-          open: false
-        },
-        propertiesPanel: {
-          open: true
-        }
-      } }
-    />
-  );
-
-  const instance = wrapper.find(CmmnEditor).instance();
-
-  return {
-    instance,
-    wrapper
+  const cmmnOptions = {
+    activeSheet: defaultActiveSheet,
+    ...options
   };
+  return renderEditorHelper(CmmnEditor, xml, cmmnOptions);
 }

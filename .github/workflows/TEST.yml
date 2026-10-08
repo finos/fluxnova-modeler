@@ -21,11 +21,11 @@ jobs:
       BUILD_NUMBER: ${{ github.run_number }}-${{ github.run_id }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
     - name: Use Node.js
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v6
       with:
-        node-version: 22
+        node-version: 24
         cache: 'npm'
     - name: Install npm dependencies
       run: npm install
@@ -57,7 +57,7 @@ jobs:
       run: npm run build -- --win
 
     - name: Upload build artifacts ${{ matrix.os }}
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: fluxnova-modeler-${{ steps.get-version.outputs.APP_VERSION }}-${{ matrix.os }}
         path: dist

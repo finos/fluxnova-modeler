@@ -10,9 +10,11 @@
 
 import React from 'react';
 
-import { shallow } from 'enzyme';
+import { render, fireEvent, screen, waitFor } from '@testing-library/react';
 
 import { VersionInfo } from '../VersionInfo';
+
+import { Slot, SlotFillRoot } from '../../../app/slot-fill';
 
 import Flags, { DISPLAY_VERSION } from '../../../util/Flags';
 
@@ -24,54 +26,51 @@ import Metadata from '../../../util/Metadata';
 
 describe('<VersionInfo>', function() {
 
-  it('should render', function() {
-
-    // given
-    const render = () => createVersionInfo();
-
-    // then
-    expect(render).not.to.throw();
-  });
-
-
   it('should open when button is clicked', function() {
 
     // given
-    const wrapper = createVersionInfo();
+    createVersionInfo();
 
     // when
-    wrapper.find('button').simulate('click');
+    fireEvent.click(screen.getByRole('button'));
 
     // then
-    expect(wrapper.exists('VersionInfoOverlay'), 'Overlay should be displayed').to.be.true;
+    expect(screen.getByRole('dialog')).to.exist;
   });
 
 
-  it('should open via menu events', function() {
+  it('should open via menu events', async function() {
 
     // given
     const subscribe = createSubscribe();
-    const wrapper = createVersionInfo({ subscribe });
+    createVersionInfo({ subscribe });
 
     // when
     subscribe.emit({ source: 'menu' });
 
     // then
-    expect(wrapper.exists('VersionInfoOverlay'), 'Overlay should be displayed').to.be.true;
+    await waitFor(() => {
+      expect(screen.getByRole('dialog'), 'Overlay should be displayed').to.exist;
+    });
   });
 
 
   it('should close when button is clicked again', function() {
 
     // given
-    const wrapper = createVersionInfo();
+    createVersionInfo();
 
     // when
-    wrapper.find('button').simulate('click');
-    wrapper.find('button').simulate('click');
+    fireEvent.click(screen.getByRole('button'));
+
+    // assume
+    expect(screen.getByRole('dialog'), 'Overlay should be displayed').to.exist;
+
+    // when
+    fireEvent.click(screen.getByRole('button'));
 
     // then
-    expect(wrapper.exists('VersionInfoOverlay'), 'Overlay should be gone').to.be.false;
+    expect(screen.queryByRole('dialog'), 'Overlay should be gone').to.be.null;
   });
 
 
@@ -85,10 +84,10 @@ describe('<VersionInfo>', function() {
     it('should display unread marker when app is opened for the first time', function() {
 
       // given
-      const wrapper = createVersionInfo();
+      createVersionInfo();
 
       // then
-      expect(wrapper.exists('UnreadMarker'), 'Unread marker should be displayed').to.be.true;
+      expect(screen.getByLabelText('unread'), 'Unread marker should be displayed').to.exist;
     });
 
 
@@ -97,40 +96,40 @@ describe('<VersionInfo>', function() {
       // given
       const get = key => key === 'versionInfo' && { lastOpenedVersion: 'OLD' };
       const config = new Config({ get });
-      const wrapper = createVersionInfo({ config });
+      createVersionInfo({ config });
 
       // then
-      expect(wrapper.exists('UnreadMarker'), 'Unread marker should be displayed').to.be.true;
+      expect(screen.getByLabelText('unread'), 'Unread marker should be displayed').to.exist;
     });
 
 
-    it('should NOT display unread marker when overlay is clicked', function() {
+    it('should NOT display unread marker when overlay is clicked', async function() {
 
       // given
       const get = key => key === 'versionInfo' && { lastOpenedVersion: 'OLD' };
       const config = new Config({ get });
-      const wrapper = createVersionInfo({ config });
+      createVersionInfo({ config });
 
       // when
-      wrapper.find('button').simulate('click');
+      fireEvent.click(screen.getByRole('button'));
 
       // then
-      return expectEventually(wrapper, () => {
-        expect(wrapper.exists('UnreadMarker'), 'Unread marker should be gone').to.be.false;
+      await waitFor(() => {
+        expect(screen.queryByLabelText('unread'), 'Unread marker should be gone').to.be.null;
       });
     });
 
 
-    it('should NOT display unread marker if it has been already opened', function() {
+    it('should NOT display unread marker if it has been already opened', async function() {
 
       // given
       const get = key => key === 'versionInfo' && { lastOpenedVersion: 'TEST_VERSION' };
       const config = new Config({ get });
-      const wrapper = createVersionInfo({ config });
+      createVersionInfo({ config });
 
       // then
-      return expectEventually(wrapper, () => {
-        expect(wrapper.exists('UnreadMarker'), 'Unread marker should be gone').to.be.false;
+      await waitFor(() => {
+        expect(screen.queryByLabelText('unread'), 'Unread marker should be gone').to.be.null;
       });
     });
   });
@@ -142,10 +141,10 @@ describe('<VersionInfo>', function() {
 
       // given
       const triggerAction = sinon.spy();
-      const wrapper = createVersionInfo({ triggerAction });
+      createVersionInfo({ triggerAction });
 
       // when
-      wrapper.find('button').simulate('click');
+      fireEvent.click(screen.getByRole('button'));
 
       // then
       expect(triggerAction).to.have.been.calledOnceWith(
@@ -154,31 +153,37 @@ describe('<VersionInfo>', function() {
     });
 
 
-    it('should propagate the source', function() {
-
-      // given
-      const triggerAction = sinon.spy();
-      const wrapper = createVersionInfo({ triggerAction });
-      const instance = wrapper.instance();
-
-      // when
-      instance.open('menu');
-
-      // then
-      expect(triggerAction).to.have.been.calledOnceWith(
-        'emit-event', { type: 'versionInfo.opened', payload: { type: 'open', source: 'menu' } }
-      );
-    });
-
-
-    it('should NOT notify again when overlay is already open', function() {
+    it('should propagate the source', async function() {
 
       // given
       const triggerAction = sinon.spy();
       const subscribe = createSubscribe();
-      const wrapper = createVersionInfo({ subscribe, triggerAction });
-      const instance = wrapper.instance();
-      instance.open('menu');
+      createVersionInfo({ subscribe, triggerAction });
+
+      // when
+      subscribe.emit({ source: 'menu' });
+
+      // then
+      await waitFor(() => {
+        expect(triggerAction).to.have.been.calledOnceWith(
+          'emit-event', { type: 'versionInfo.opened', payload: { type: 'open', source: 'menu' } }
+        );
+      });
+    });
+
+
+    it('should NOT notify again when overlay is already open', async function() {
+
+      // given
+      const triggerAction = sinon.spy();
+      const subscribe = createSubscribe();
+      createVersionInfo({ subscribe, triggerAction });
+      subscribe.emit({ source: 'menu' });
+
+      await waitFor(() => {
+        expect(screen.getByRole('dialog')).to.exist;
+      });
+
       triggerAction.resetHistory();
 
       // when
@@ -197,10 +202,10 @@ describe('<VersionInfo>', function() {
       // given
       Metadata.init({ version: '0.1.2' });
 
-      const wrapper = createVersionInfo();
+      createVersionInfo();
 
       // when
-      const buttonHtml = wrapper.find('button').html();
+      const buttonHtml = screen.getByRole('button').innerHTML;
 
       // then
       expect(buttonHtml).to.contain('0.1.2');
@@ -212,10 +217,10 @@ describe('<VersionInfo>', function() {
       // given
       Flags.init({ [ DISPLAY_VERSION ]: '1.2.3.4' });
 
-      const wrapper = createVersionInfo();
+      createVersionInfo();
 
       // when
-      const buttonHtml = wrapper.find('button').html();
+      const buttonHtml = screen.getByRole('button').innerHTML;
 
       // then
       expect(buttonHtml).to.contain('1.2.3.4');
@@ -226,51 +231,27 @@ describe('<VersionInfo>', function() {
 });
 
 
-function createVersionInfo(props = {}, mount = shallow) {
+function createVersionInfo(props = {}) {
   const {
     config = new Config(),
     subscribe = noop,
     triggerAction = noop
   } = props;
 
-  return mount(
-    <VersionInfo
-      config={ config }
-      subscribe={ subscribe }
-      triggerAction={ triggerAction }
-    />
+  render(
+    <SlotFillRoot>
+      <Slot name="status-bar__app" />
+      <VersionInfo
+        config={ config }
+        subscribe={ subscribe }
+        triggerAction={ triggerAction }
+      />
+    </SlotFillRoot>
   );
 }
 
-function noop() {}
-
-async function expectEventually(wrapper, expectStatement) {
-  const sleep = time => {
-    return new Promise(resolve => {
-      setTimeout(() => {
-        resolve();
-      }, time);
-    });
-  };
-
-  for (let i = 0; i < 10; i++) {
-    wrapper.update();
-
-    try {
-      expectStatement();
-
-      // success
-      return;
-    } catch {
-
-      // do nothing
-    }
-
-    await sleep(50);
-  }
-
-  // let it fail correctly
-  expectStatement();
+function noop() {
+  return { cancel() {} };
 }
 
 function createSubscribe() {

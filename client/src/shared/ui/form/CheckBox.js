@@ -12,6 +12,10 @@ import React from 'react';
 
 import classNames from 'classnames';
 
+import {
+  fieldError as defaultFieldError
+} from './Util';
+
 export default function CheckBox(props) {
 
   const {
@@ -19,12 +23,18 @@ export default function CheckBox(props) {
     label,
     field,
     form,
+    fieldError,
     ...restProps
   } = props;
 
   const {
-    name: fieldName
+    name,
+    value,
+    ...restField
   } = field;
+
+  const meta = form.getFieldMeta(name);
+  const error = (fieldError || defaultFieldError)(meta, name);
 
   return (
     <React.Fragment>
@@ -33,13 +43,25 @@ export default function CheckBox(props) {
           classNames('custom-control', 'custom-checkbox')
         }>
           <input
-            { ...field }
+            type="checkbox"
+            name={ name }
+            checked={ !!value }
             disabled={ form.isSubmitting }
-            className="custom-control-input"
-            id={ fieldName }
+            className={ classNames('custom-control-input', {
+              'is-invalid': !!error
+            }) }
+            id={ name }
+            { ...restField }
             { ...restProps }
           />
-          <label className="custom-control-label" htmlFor={ fieldName }>{ label }</label>
+          <label
+            className={ classNames('custom-control-label', {
+              'is-invalid': !!error
+            }) }
+            htmlFor={ name }
+          >
+            { label }
+          </label>
         </div>
       </div>
     </React.Fragment>

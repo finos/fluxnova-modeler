@@ -12,7 +12,7 @@
 
 import React from 'react';
 
-import { shallow } from 'enzyme';
+import { render, waitFor } from '@testing-library/react';
 
 import ConnectorTemplates from '..';
 
@@ -44,7 +44,9 @@ describe('<ConnectorTemplates>', function() {
     backend.receive('client:connector-templates-update-success', null, true);
 
     // then
-    expect(displayNotificationSpy).to.have.been.calledWithMatch({ type: 'success', title: 'Fluxnova Connector templates updated' });
+    await waitFor(() => {
+      expect(displayNotificationSpy).to.have.been.calledWithMatch({ type: 'success', title: 'Fluxnova Connector templates updated' });
+    });
 
     expect(triggerActionSpy).to.have.been.calledWith('elementTemplates.reload');
   });
@@ -69,7 +71,9 @@ describe('<ConnectorTemplates>', function() {
     backend.receive('client:connector-templates-update-success', null, false);
 
     // then
-    expect(displayNotificationSpy).to.have.been.calledWithMatch({ type: 'success', title: 'Fluxnova Connector templates up to date' });
+    await waitFor(() => {
+      expect(displayNotificationSpy).to.have.been.calledWithMatch({ type: 'success', title: 'Fluxnova Connector templates up to date' });
+    });
 
     expect(triggerActionSpy).to.have.been.calledWith('elementTemplates.reload');
   });
@@ -94,7 +98,9 @@ describe('<ConnectorTemplates>', function() {
     backend.receive('client:connector-templates-update-success', null, true, [ 'foo', 'bar' ]);
 
     // then
-    expect(displayNotificationSpy).to.have.been.calledWithMatch({ type: 'warning', title: 'Fluxnova Connector templates updated with warnings' });
+    await waitFor(() => {
+      expect(displayNotificationSpy).to.have.been.calledWithMatch({ type: 'warning', title: 'Fluxnova Connector templates updated with warnings' });
+    });
     expect(displayNotificationSpy.args[0][0].content).to.exist;
   });
 
@@ -118,30 +124,43 @@ describe('<ConnectorTemplates>', function() {
     backend.receive('client:connector-templates-update-error', null, 'error');
 
     // then
-    expect(displayNotificationSpy).to.have.been.calledWithMatch({ type: 'error', title: 'Error updating Fluxnova Connector templates' });
+    await waitFor(() => {
+      expect(displayNotificationSpy).to.have.been.calledWithMatch({ type: 'error', title: 'Error updating Fluxnova Connector templates' });
+    });
     expect(displayNotificationSpy.args[0][0].content).to.exist;
   });
 
 });
 
 async function createConnectorTemplates(props = {}) {
-  const wrapper = shallow(<ConnectorTemplates { ...{
-    _getGlobal: () => {},
+  const defaultProps = {
+    _getGlobal: (name) => {
+      if (name === 'backend') {
+        return { on: () => {} };
+      }
+      return {};
+    },
     displayNotification: () => {},
-    subscribe: () => {},
+    subscribe: (event, callback) => {
+
+      // Immediately call the callback with a cloud-bpmn tab
+      if (event === 'app.activeTabChanged') {
+        callback({ activeTab: createTab() });
+      }
+    },
     triggerAction: () => {},
     ...props
-  } } />);
+  };
 
-  wrapper.setState({
-    activeTab: createTab()
+  const { container } = render(<ConnectorTemplates { ...defaultProps } />);
+
+  // Wait for component to render
+  await waitFor(() => {
+    expect(container).to.exist;
   });
 
-  const instance = wrapper.instance();
-
   return {
-    instance,
-    wrapper
+    container
   };
 }
 

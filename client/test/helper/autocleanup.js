@@ -8,18 +8,9 @@
  * except in compliance with the MIT License.
  */
 
-import React from 'react';
+import { cleanup } from '@testing-library/react';
 
-import {
-  shallow
-} from 'enzyme';
-
-import StartInstanceConfigOverlay from '../StartInstanceConfigOverlay';
-
-describe('<StartInstanceConfigOverlay>', function() {
-
-  it('should render', function() {
-    shallow(<StartInstanceConfigOverlay />);
-  });
-
+// eslint-disable-next-line mocha/no-top-level-hooks
+beforeEach(function() {
+  cleanup();
 });

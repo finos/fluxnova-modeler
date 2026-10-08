@@ -31,6 +31,7 @@ export default class SlotFillRoot extends PureComponent {
     };
 
     this.uid = 7913;
+    this.previousProps = new WeakMap();
 
     this.fillContext = {
 
@@ -47,7 +48,20 @@ export default class SlotFillRoot extends PureComponent {
           id = newFill.id = this.uid++;
         }
 
+        const previousProps = this.previousProps.get(newFill);
+        const propsChanged = previousProps !== newFill.props;
+
+        this.previousProps.set(newFill, newFill.props);
+
         this.setState((state) => {
+
+          const existingFill = state.fills.find(fill => fill.id === id);
+
+          // Avoid redundant updates for unchanged fill registrations, while
+          // still propagating updates when fill props changed.
+          if (existingFill === newFill && !propsChanged) {
+            return null;
+          }
 
           let found = false;
 
@@ -79,6 +93,12 @@ export default class SlotFillRoot extends PureComponent {
        */
       removeFill: (fill) => {
         this.setState((state) => {
+          const hasFill = state.fills.some(f => f.id === fill.id);
+
+          if (!hasFill) {
+            return null;
+          }
+
           return {
             fills: state.fills.filter(f => f.id !== fill.id)
           };

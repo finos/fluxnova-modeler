@@ -24,6 +24,15 @@
   z-index: 1001;
 }
 
+.bio-properties-panel-group-header:has(.bio-properties-panel-tooltip) {
+  z-index: 1002;
+}
+
+// Hide FEEL popup buttons for non-FEEL fields (like Name, Description)
+.bio-properties-panel-open-feel-popup {
+  display: none;
+}
+
 .djs-search-highlight {
   font-weight: bold;
 }

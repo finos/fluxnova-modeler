@@ -18,6 +18,8 @@ import handToolOnSpaceModule from './features/hand-tool-on-space';
 import propertiesPanelKeyboardBindingsModule from './features/properties-panel-keyboard-bindings';
 import propPanelExtensionModule from './features/properties-panel-extension';
 import bpmnFormExtensionProviderModule from './features/properties-panel-form-group';
+import restrictedIoModule from './features/restricted-io';
+
 import lintingAnnotationsModule from '@camunda/linting/modeler';
 
 import { BpmnJSTracking as bpmnJSTracking } from 'bpmn-js-tracking';
@@ -29,6 +31,8 @@ import popupMenuTracking from 'bpmn-js-tracking/lib/features/popup-menu';
 import paletteTracking from 'bpmn-js-tracking/lib/features/palette';
 
 import { BpmnImprovedCanvasModule } from './features/improved-canvas';
+import FluxnovaBpmnModdle from '../../../../moddle/fluxnova-bpmn-moddle';
+import FluxnovaModelerModdle from '../../../../moddle/fluxnova-bpmn-modeler-moddle';
 
 import Flags, {
   DISABLE_ADJUST_ORIGIN,
@@ -60,7 +64,11 @@ export default class PlatformBpmnModeler extends BpmnModeler {
     super({
       ...otherOptions,
       additionalModules,
-      moddleExtensions,
+      moddleExtensions: {
+        fluxnova: FluxnovaBpmnModdle,
+        modeler: FluxnovaModelerModdle,
+        ...moddleExtensions
+      },
       disableAdjustOrigin: Flags.get(DISABLE_ADJUST_ORIGIN),
       canvas: {
         autoFocus: true
@@ -79,6 +87,7 @@ const extensionModules = [
   propertiesPanelKeyboardBindingsModule,
   bpmnFormExtensionProviderModule,
   propPanelExtensionModule,
+  restrictedIoModule,
   lintingAnnotationsModule,
   bpmnJSTracking,
   contextPadTracking,

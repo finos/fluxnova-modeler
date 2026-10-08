@@ -282,58 +282,78 @@ export default class DeploymentConfigOverlay extends React.PureComponent {
 
                         <Field
                           name="deployment.name"
-                          component={ TextInput }
-                          label="Deployment name"
-                          fieldError={ fieldError }
                           validate={ (value) => {
-                            return validator.validateDeploymentName(value, this.isOnBeforeSubmit);
+                            return validator.validateDeploymentName(value, this.hasTriedSubmit);
                           } }
-                          autoFocus
-                        />
+                        >
+                          {({ field, form: fieldForm }) => (
+                            <TextInput
+                              field={ field }
+                              form={ fieldForm }
+                              label="Deployment name"
+                              fieldError={ fieldError }
+                              autoFocus
+                            />
+                          )}
+                        </Field>
 
-                        <Field
-                          name="deployment.tenantId"
-                          component={ TextInput }
-                          fieldError={ fieldError }
-                          hint="Optional"
-                          label="Tenant ID"
-                        />
+                        <Field name="deployment.tenantId">
+                          {({ field, form: fieldForm }) => (
+                            <TextInput
+                              field={ field }
+                              form={ fieldForm }
+                              fieldError={ fieldError }
+                              hint="Optional"
+                              label="Tenant ID"
+                            />
+                          )}
+                        </Field>
 
                         <Field
                           name="endpoint.url"
-                          component={ TextInput }
-                          fieldError={ fieldError }
                           validate={ (value) => {
                             this.externalErrorCodeCache = null;
                             return validator.validateEndpointURL(
                               value,
                               form.setFieldError,
-                              this.isOnBeforeSubmit,
+                              this.hasTriedSubmit,
                               onAuthDetection,
                               (code) => { this.externalErrorCodeCache = code; }
                             );
                           } }
-                          label="REST endpoint"
-                          hint="Should point to a running Fluxnova REST API endpoint."
-                        />
+                        >
+                          {({ field, form: fieldForm }) => (
+                            <TextInput
+                              field={ field }
+                              form={ fieldForm }
+                              fieldError={ fieldError }
+                              label="REST endpoint"
+                              hint="Should point to a running Fluxnova REST API endpoint."
+                            />
+                          )}
+                        </Field>
 
                         {
                           isAuthNeeded && (
-                            <Field
-                              name="endpoint.authType"
-                              label="Authentication"
-                              component={ Radio }
-                              onChange={ (event) => {
-                                form.handleChange(event);
-                                this.setAuthType(form);
-                              } }
-                              values={
-                                [
-                                  { value: AUTH_TYPES.BASIC, label: 'HTTP Basic' },
-                                  { value: AUTH_TYPES.BEARER, label: 'Bearer token' }
-                                ]
-                              }
-                            />
+                            <Field name="endpoint.authType">
+                              {({ field, form: fieldForm }) => (
+                                <Radio
+                                  field={ field }
+                                  form={ fieldForm }
+                                  label="Authentication"
+                                  onChange={ (event) => {
+                                    form.handleChange(event);
+                                    this.setAuthType(form);
+                                  } }
+                                  values={
+                                    [
+                                      { value: AUTH_TYPES.BASIC, label: 'HTTP Basic' },
+                                      { value: AUTH_TYPES.BEARER, label: 'Bearer token' }
+                                    ]
+                                  }
+                                />
+                              )}
+                            </Field>
                           )
                         }
 
@@ -341,46 +361,68 @@ export default class DeploymentConfigOverlay extends React.PureComponent {
                           <React.Fragment>
                             <Field
                               name="endpoint.username"
-                              component={ TextInput }
-                              fieldError={ fieldError }
                               validate={ (value) => {
-                                return validator.validateUsername(value || '', this.isOnBeforeSubmit);
+                                return validator.validateUsername(value || '', this.hasTriedSubmit);
                               } }
-                              label="Username"
-                            />
+                            >
+                              {({ field, form: fieldForm }) => (
+                                <TextInput
+                                  field={ field }
+                                  form={ fieldForm }
+                                  fieldError={ fieldError }
+                                  label="Username"
+                                />
+                              )}
+                            </Field>
 
                             <Field
                               name="endpoint.password"
-                              component={ TextInput }
-                              fieldError={ fieldError }
                               validate={ (value) => {
-                                return validator.validatePassword(value || '', this.isOnBeforeSubmit);
+                                return validator.validatePassword(value || '', this.hasTriedSubmit);
                               } }
-                              label="Password"
-                              type="password"
-                            />
+                            >
+                              {({ field, form: fieldForm }) => (
+                                <TextInput
+                                  field={ field }
+                                  form={ fieldForm }
+                                  fieldError={ fieldError }
+                                  label="Password"
+                                  type="password"
+                                />
+                              )}
+                            </Field>
                           </React.Fragment>
                         )}
 
                         { isAuthNeeded && form.values.endpoint.authType === AUTH_TYPES.BEARER && (
                           <Field
                             name="endpoint.token"
-                            component={ TextInput }
-                            fieldError={ fieldError }
                             validate={ (value) => {
-                              return validator.validateToken(value || '', this.isOnBeforeSubmit);
+                              return validator.validateToken(value || '', this.hasTriedSubmit);
                             } }
-                            label="Token"
-                          />
+                          >
+                            {({ field, form: fieldForm }) => (
+                              <TextInput
+                                field={ field }
+                                form={ fieldForm }
+                                fieldError={ fieldError }
+                                label="Token"
+                              />
+                            )}
+                          </Field>
                         )}
 
                         {
                           isAuthNeeded && (
-                            <Field
-                              name={ 'endpoint.rememberCredentials' }
-                              component={ ToggleSwitch }
-                              switcherLabel="Remember credentials"
-                            />
+                            <Field name="endpoint.rememberCredentials">
+                              {({ field, form: fieldForm }) => (
+                                <ToggleSwitch
+                                  field={ field }
+                                  form={ fieldForm }
+                                  switcherLabel="Remember credentials"
+                                />
+                              )}
+                            </Field>
                           )
                         }
                       </div>
@@ -399,10 +441,16 @@ export default class DeploymentConfigOverlay extends React.PureComponent {
                     <fieldset>
                       <Field
                         name="deployment.attachments"
-                        component={ FileInput }
-                        label="Select files"
                         validate={ validator.validateAttachments }
-                      />
+                      >
+                        {({ field, form: fieldForm }) => (
+                          <FileInput
+                            field={ field }
+                            form={ fieldForm }
+                            label="Select files"
+                          />
+                        )}
+                      </Field>
                     </fieldset>
 
                     <Section.Actions>
@@ -411,16 +459,7 @@ export default class DeploymentConfigOverlay extends React.PureComponent {
                         className="btn btn-primary"
                         disabled={ form.isSubmitting }
                         onClick={ () => {
-
-                          // @oguz:
-                          // this is a hack as FormIK does not seem to
-                          // set isSubmitting when this button is clicked.
-                          // if you come up with a better solution, please
-                          // do a PR.
-                          this.isOnBeforeSubmit = true;
-                          setTimeout(() => {
-                            this.isOnBeforeSubmit = false;
-                          });
+                          this.hasTriedSubmit = true;
                         } }
                       >
                         {

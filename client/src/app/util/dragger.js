@@ -19,7 +19,5 @@ export function addDragger(node, options, onDrag, onStart = noop) {
   dragger.on('drag', onDrag);
   dragger.on('start', onStart);
 
-  dragger.on('cancel', onDrag);
-
   return dragger;
 }

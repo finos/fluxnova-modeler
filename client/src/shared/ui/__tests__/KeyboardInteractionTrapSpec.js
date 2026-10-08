@@ -8,13 +8,15 @@
  * except in compliance with the MIT License.
  */
 
-/* global sinon */
+
+import * as sinon from 'sinon';
 
 import React from 'react';
 
 import {
-  mount
-} from 'enzyme';
+  render,
+  cleanup
+} from '@testing-library/react';
 
 import KeyboardInteractionTrap,
 { KeyboardInteractionTrapContext } from '../trap/KeyboardInteractionTrap';
@@ -22,13 +24,7 @@ import KeyboardInteractionTrap,
 
 describe('<KeyboardInteractionTrap>', function() {
 
-  let wrapper;
-
-  afterEach(function() {
-    if (wrapper && wrapper.exists()) {
-      wrapper.unmount();
-    }
-  });
+  afterEach(cleanup);
 
 
   it('should dispatch update-menu action', function() {
@@ -37,14 +33,14 @@ describe('<KeyboardInteractionTrap>', function() {
     const triggerAction = sinon.spy();
 
     // when
-    wrapper = mount(
+    const { container } = render(
       <KeyboardInteractionTrapContext.Provider value={ triggerAction }>
         <KeyboardInteractionTrap />
       </KeyboardInteractionTrapContext.Provider>
     );
 
     // then
-    expect(wrapper).to.exist;
+    expect(container).to.exist;
     expect(triggerAction).to.have.been.calledOnce;
   });
 
@@ -52,11 +48,173 @@ describe('<KeyboardInteractionTrap>', function() {
   it('should NOT trigger error outside of context', function() {
 
     // when
-    wrapper = mount(
+    const { container } = render(
       <KeyboardInteractionTrap />
     );
 
     // then
-    expect(wrapper).to.exist;
+    expect(container).to.exist;
+  });
+
+
+  it('should update menu when input receives focus', function() {
+
+    // given
+    const triggerAction = sinon.spy();
+
+    const { container } = render(
+      <KeyboardInteractionTrapContext.Provider value={ triggerAction }>
+        <KeyboardInteractionTrap>
+          <input type="text" />
+        </KeyboardInteractionTrap>
+      </KeyboardInteractionTrapContext.Provider>
+    );
+
+    const input = container.querySelector('input');
+
+    // when
+    input.focus();
+
+    // then
+    expect(triggerAction).to.have.been.calledWith('update-menu', {
+      editMenu: [
+        [
+          {
+            role: 'undo',
+            enabled: true
+          },
+          {
+            role: 'redo',
+            enabled: true
+          }
+        ],
+        [
+          {
+            role: 'copy',
+            enabled: true
+          },
+          {
+            role: 'cut',
+            enabled: true
+          },
+          {
+            role: 'paste',
+            enabled: true
+          },
+          {
+            role: 'selectAll',
+            enabled: true
+          }
+        ]
+      ]
+    });
+  });
+
+
+  it('should update menu when textarea receives focus', function() {
+
+    // given
+    const triggerAction = sinon.spy();
+
+    const { container } = render(
+      <KeyboardInteractionTrapContext.Provider value={ triggerAction }>
+        <KeyboardInteractionTrap>
+          <textarea />
+        </KeyboardInteractionTrap>
+      </KeyboardInteractionTrapContext.Provider>
+    );
+
+    const textarea = container.querySelector('textarea');
+
+    // when
+    textarea.focus();
+
+    // then
+    expect(triggerAction).to.have.been.calledWith('update-menu', {
+      editMenu: [
+        [
+          {
+            role: 'undo',
+            enabled: true
+          },
+          {
+            role: 'redo',
+            enabled: true
+          }
+        ],
+        [
+          {
+            role: 'copy',
+            enabled: true
+          },
+          {
+            role: 'cut',
+            enabled: true
+          },
+          {
+            role: 'paste',
+            enabled: true
+          },
+          {
+            role: 'selectAll',
+            enabled: true
+          }
+        ]
+      ]
+    });
+  });
+
+
+  it('should disable menu when non-input element receives focus', function() {
+
+    // given
+    const triggerAction = sinon.spy();
+
+    const { container } = render(
+      <KeyboardInteractionTrapContext.Provider value={ triggerAction }>
+        <KeyboardInteractionTrap>
+          <button>Click me</button>
+        </KeyboardInteractionTrap>
+      </KeyboardInteractionTrapContext.Provider>
+    );
+
+    const button = container.querySelector('button');
+
+    // when
+    button.focus();
+
+    // then
+    expect(triggerAction).to.have.been.calledWith('update-menu', {
+      editMenu: [
+        [
+          {
+            role: 'undo',
+            enabled: false
+          },
+          {
+            role: 'redo',
+            enabled: false
+          }
+        ],
+        [
+          {
+            role: 'copy',
+            enabled: false
+          },
+          {
+            role: 'cut',
+            enabled: false
+          },
+          {
+            role: 'paste',
+            enabled: false
+          },
+          {
+            role: 'selectAll',
+            enabled: false
+          }
+        ]
+      ]
+    });
   });
 });

@@ -10,16 +10,18 @@
 
 /* global sinon */
 
-import React from 'react';
+import React, { createRef } from 'react';
+
+import { render, screen, waitFor } from '@testing-library/react';
 
 import { MultiSheetTab } from '../MultiSheetTab';
-
-import { mount } from 'enzyme';
 
 import {
   Cache,
   WithCachedState
 } from '../../cached';
+
+import { SlotFillRoot, Slot } from '../../slot-fill';
 
 import {
   Editor as DefaultEditor,
@@ -48,7 +50,7 @@ describe('<MultiSheetTab>', function() {
       // given
       const {
         instance,
-        wrapper
+        rerender
       } = renderTab({
         xml: 'foo'
       });
@@ -56,9 +58,7 @@ describe('<MultiSheetTab>', function() {
       const xml = 'bar';
 
       // when
-      wrapper.setProps({
-        xml
-      });
+      rerender({ xml });
 
       // then
       const { lastXML } = instance.getCached();
@@ -115,7 +115,7 @@ describe('<MultiSheetTab>', function() {
       // then
       expect(errorSpy).not.to.have.been.called;
       expect(warningSpy).to.have.been.calledTwice;
-      expect(warningSpy.alwaysCalledWith('warning')).to.be.true;
+      expect(warningSpy.alwaysCalledWith(defaultTab, 'warning')).to.be.true;
     });
 
 
@@ -154,7 +154,7 @@ describe('<MultiSheetTab>', function() {
       instance.handleImport(error);
 
       // then
-      expect(errorSpy).to.have.been.calledWith(error);
+      expect(errorSpy).to.have.been.calledWith(defaultTab, error);
       expect(warningSpy).not.to.have.been.called;
       expect(showImportErrorDialogSpy).to.have.been.called;
     });
@@ -180,10 +180,10 @@ describe('<MultiSheetTab>', function() {
       instance.handleImport(error, warnings);
 
       // then
-      expect(errorSpy).to.have.been.calledWith(error);
+      expect(errorSpy).to.have.been.calledWith(defaultTab, error);
 
       expect(warningSpy).to.have.been.calledTwice;
-      expect(warningSpy.alwaysCalledWith('warning')).to.be.true;
+      expect(warningSpy.alwaysCalledWith(defaultTab, 'warning')).to.be.true;
 
       expect(showImportErrorDialogSpy).to.have.been.called;
       expect(displayWarningsNotificationSpy).not.to.have.been.called;
@@ -241,7 +241,7 @@ describe('<MultiSheetTab>', function() {
     });
 
 
-    it('should open fallback on error', function() {
+    it('should open fallback on error', async function() {
 
       // given
       const {
@@ -252,11 +252,10 @@ describe('<MultiSheetTab>', function() {
       instance.handleImport(new Error('error'));
 
       // then
-      const {
-        activeSheet
-      } = instance.getCached();
-
-      expect(activeSheet.id).to.equal('fallback');
+      await waitFor(() => {
+        const { activeSheet } = instance.getCached();
+        expect(activeSheet.id).to.equal('fallback');
+      });
     });
 
   });
@@ -264,7 +263,7 @@ describe('<MultiSheetTab>', function() {
 
   describe('#openFallback', function() {
 
-    it('should open fallback', function() {
+    it('should open fallback', async function() {
 
       // given
       const {
@@ -275,15 +274,14 @@ describe('<MultiSheetTab>', function() {
       instance.openFallback();
 
       // then
-      const {
-        activeSheet
-      } = instance.getCached();
-
-      expect(activeSheet.id).to.equal('fallback');
+      await waitFor(() => {
+        const { activeSheet } = instance.getCached();
+        expect(activeSheet.id).to.equal('fallback');
+      });
     });
 
 
-    it('should open fallback on error during first mount', function() {
+    it('should open fallback on error during first mount', async function() {
 
       // given
       class BrokenEditor extends DefaultEditor {
@@ -311,11 +309,10 @@ describe('<MultiSheetTab>', function() {
       const { instance } = renderTab({ providers });
 
       // then
-      const {
-        activeSheet
-      } = instance.getCached();
-
-      expect(activeSheet.id).to.equal('fallback');
+      await waitFor(() => {
+        const { activeSheet } = instance.getCached();
+        expect(activeSheet.id).to.equal('fallback');
+      });
     });
 
   });
@@ -405,8 +402,7 @@ describe('<MultiSheetTab>', function() {
 
   describe('dirty state', function() {
 
-    let instance,
-        wrapper;
+    let instance;
 
     const INITIAL_XML = '<foo></foo>';
 
@@ -419,7 +415,7 @@ describe('<MultiSheetTab>', function() {
         }
       });
 
-      ({ instance, wrapper } = renderTab({
+      ({ instance } = renderTab({
         xml: INITIAL_XML,
         cache,
         providers: [ {
@@ -452,7 +448,7 @@ describe('<MultiSheetTab>', function() {
       const { sheets } = instance.getCached();
 
       // make sure editor returns same XML
-      wrapper.find(DefaultEditor).first().instance().setXML(INITIAL_XML);
+      instance.editorRef.current.setXML(INITIAL_XML);
 
       // when
       await instance.switchSheet(sheets[1]);
@@ -468,13 +464,15 @@ describe('<MultiSheetTab>', function() {
       const { sheets } = instance.getCached();
 
       // make sure editor returns NOT same XML
-      wrapper.find(DefaultEditor).first().instance().setXML(`${INITIAL_XML}-bar`);
+      instance.editorRef.current.setXML(`${INITIAL_XML}-bar`);
 
       // when
       await instance.switchSheet(sheets[1]);
 
       // then
-      expect(instance.isDirty()).to.be.true;
+      await waitFor(() => {
+        expect(instance.isDirty()).to.be.true;
+      });
     });
 
 
@@ -484,7 +482,9 @@ describe('<MultiSheetTab>', function() {
       await instance.handleContentUpdated(`${INITIAL_XML}-bar`);
 
       // then
-      expect(instance.isDirty()).to.be.true;
+      await waitFor(() => {
+        expect(instance.isDirty()).to.be.true;
+      });
     });
 
 
@@ -569,24 +569,24 @@ describe('<MultiSheetTab>', function() {
     it('should display sheet switch for more than one sheet', function() {
 
       // given
-      const { wrapper } = renderTab({ providers: defaultProviders });
+      renderTab({ providers: defaultProviders });
 
       // then
-      const sheetSwitchComponent = wrapper.find('SheetSwitch');
+      const sheetSwitchButton = screen.queryByRole('button');
 
-      expect(sheetSwitchComponent.children()).to.have.lengthOf(1);
+      expect(sheetSwitchButton).to.exist;
     });
 
 
     it('should NOT display sheet switch when there is only one sheet', function() {
 
       // given
-      const { wrapper } = renderTab({ providers: [ defaultProviders[0] ] });
+      renderTab({ providers: [ defaultProviders[0] ] });
 
       // then
-      const sheetSwitchComponent = wrapper.find('SheetSwitch');
+      const sheetSwitchButton = screen.queryByRole('button');
 
-      expect(sheetSwitchComponent.children()).to.have.lengthOf(0);
+      expect(sheetSwitchButton).to.be.null;
     });
   });
 
@@ -616,38 +616,76 @@ function renderTab(options = {}) {
     providers
   } = options;
 
-  const wrapper = mount(
-    <TestTab
-      id={ id || 'editor' }
-      tab={ tab || defaultTab }
-      xml={ xml }
-      onChanged={ onChanged || noop }
-      onError={ onError || noop }
-      onWarning={ onWarning || noop }
-      onShown={ onShown || noop }
-      onLayoutChanged={ onLayoutChanged || noop }
-      onContextMenu={ onContextMenu || noop }
-      onAction={ onAction || noop }
-      providers={ providers || defaultProviders }
-      cache={ cache || new Cache() }
-      layout={ layout || {
-        minimap: {
-          open: false
-        },
-        propertiesPanel: {
-          open: true
-        }
-      } }
-    />
+  const tabRef = createRef();
+
+  const renderResult = render(
+    <SlotFillRoot>
+      <Slot name="status-bar__file" />
+      <TestTab
+        ref={ tabRef }
+        id={ id || 'editor' }
+        tab={ tab || defaultTab }
+        xml={ xml }
+        onChanged={ onChanged || noop }
+        onError={ onError || noop }
+        onWarning={ onWarning || noop }
+        onShown={ onShown || noop }
+        onLayoutChanged={ onLayoutChanged || noop }
+        onContextMenu={ onContextMenu || noop }
+        onAction={ onAction || noop }
+        providers={ providers || defaultProviders }
+        cache={ cache || new Cache() }
+        layout={ layout || {
+          minimap: {
+            open: false
+          },
+          propertiesPanel: {
+            open: true
+          }
+        } }
+      />
+    </SlotFillRoot>
   );
 
-  const multiSheetTab = wrapper.find(MultiSheetTab);
+  const instance = tabRef.current;
 
-  const instance = multiSheetTab.instance();
+  const rerender = (newOptions) => {
+    const mergedOptions = { ...options, ...newOptions };
+
+    renderResult.rerender(
+      <SlotFillRoot>
+        <Slot name="status-bar__file" />
+        <TestTab
+          ref={ tabRef }
+          id={ mergedOptions.id || 'editor' }
+          tab={ mergedOptions.tab || defaultTab }
+          xml={ mergedOptions.xml }
+          onChanged={ mergedOptions.onChanged || noop }
+          onError={ mergedOptions.onError || noop }
+          onWarning={ mergedOptions.onWarning || noop }
+          onShown={ mergedOptions.onShown || noop }
+          onLayoutChanged={ mergedOptions.onLayoutChanged || noop }
+          onContextMenu={ mergedOptions.onContextMenu || noop }
+          onAction={ mergedOptions.onAction || noop }
+          providers={ mergedOptions.providers || defaultProviders }
+          cache={ mergedOptions.cache || new Cache() }
+          layout={ mergedOptions.layout || {
+            minimap: {
+              open: false
+            },
+            propertiesPanel: {
+              open: true
+            }
+          } }
+        />
+      </SlotFillRoot>
+    );
+  };
 
   return {
     instance,
-    wrapper
+    ...renderResult,
+    rerender
   };
 }
 
