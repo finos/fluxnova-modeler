@@ -12,7 +12,7 @@ import React, { PureComponent } from 'react';
 
 import PlayIcon from 'icons/Play.svg';
 
-import CamundaAPI, { DeploymentError, StartInstanceError } from '../shared/CamundaAPI';
+import CamundaAPI, { DeploymentError, StartInstanceError, getOidcAPI } from '../shared/CamundaAPI';
 import { ConnectionError } from '../shared/RestAPI';
 
 import StartInstanceConfigOverlay from './StartInstanceConfigOverlay';
@@ -129,7 +129,7 @@ export default class StartInstanceTool extends PureComponent {
 
   async checkConnection(endpoint) {
 
-    const api = new CamundaAPI(endpoint);
+    const api = new CamundaAPI(endpoint, getOidcAPI(this.props));
 
     try {
       await api.checkConnection();
@@ -397,7 +397,7 @@ export default class StartInstanceTool extends PureComponent {
 
   startWithConfiguration(configuration, processDefinition, endpoint) {
 
-    const api = new CamundaAPI(endpoint);
+    const api = new CamundaAPI(endpoint, getOidcAPI(this.props));
 
     return api.startInstance(processDefinition, configuration);
   }
