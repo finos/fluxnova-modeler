@@ -1,0 +1,77 @@
+name: License Scanning
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+  schedule:
+    - cron: '0 8 * * 1'
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  scan:
+    name: Scan Licenses
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+
+      - name: Install production dependencies
+        run: npm install --omit=dev --ignore-scripts
+
+      - name: Install license-checker
+        run: npm install -g license-checker-rseidelsohn@5.0.1
+
+      - name: Get workspace package info
+        id: pkg
+        run: |
+          # Get root and workspace package names/versions for exclusion
+          ROOT_NAME=$(node -p "require('./package.json').name")
+          ROOT_VERSION=$(node -p "require('./package.json').version")
+          APP_NAME=$(node -p "require('./app/package.json').name")
+          APP_VERSION=$(node -p "require('./app/package.json').version")
+          CLIENT_NAME=$(node -p "require('./client/package.json').name")
+          CLIENT_VERSION=$(node -p "require('./client/package.json').version")
+          echo "exclude=${ROOT_NAME}@${ROOT_VERSION};${APP_NAME}@${APP_VERSION};${CLIENT_NAME}@${CLIENT_VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Run license scan
+        run: |
+          # FINOS Category A licenses only
+          # https://community.finos.org/docs/governance/software-projects/license-categories/
+          license-checker-rseidelsohn \
+            --excludePrivatePackages \
+            --onlyAllow 'Apache-2.0;Apache-1.1;MIT;ISC;BSD-2-Clause;BSD-3-Clause;0BSD;Unlicense;Python-2.0;PostgreSQL;BSL-1.0;W3C;WTFPL;Xnet;NCSA;ZPL-2.0;zlib' \
+            --excludePackages '${{ steps.pkg.outputs.exclude }};bpmn-js@18.25.1;@bpmn-io/form-js@1.24.1;@bpmn-io/form-js-carbon-styles@1.24.1;@bpmn-io/form-js-editor@1.24.1;@bpmn-io/form-js-playground@1.24.1;@bpmn-io/form-js-viewer@1.24.1;cmmn-js@0.20.0;dmn-js@17.10.2;dmn-js-boxed-expression@17.10.2;dmn-js-decision-table@17.10.2;dmn-js-drd@17.10.2;dmn-js-literal-expression@17.10.2;dmn-js-shared@17.10.2;@ibm/plex@6.4.1;@ibm/plex@6.0.0-next.6;@ibm/plex-mono@1.1.0;@ibm/plex-sans@1.1.0;@ibm/plex-sans-arabic@1.1.0;@ibm/plex-sans-devanagari@1.1.0;@ibm/plex-sans-hebrew@1.1.0;@ibm/plex-sans-thai@1.1.0;@ibm/plex-sans-thai-looped@1.1.0;@ibm/plex-serif@1.1.0'
+          #
+          # Excluded packages:
+          # - Workspace packages: excluded to avoid UNKNOWN license from private packages
+          #
+          # Approved bpmn.io exceptions (MIT + watermark clause, permissive):
+          # - bpmn-js, @bpmn-io/form-js family, cmmn-js, dmn-js family
+          #   See: https://github.com/bpmn-io/bpmn-js/blob/main/LICENSE
+          #   The bpmn.io watermark must be retained per license terms.
+          #
+          # @ibm/plex fonts (OFL-1.1 - SIL Open Font License):
+          # - Font packages pulled in by @carbon/styles via @carbon/react
+          # - OFL-1.1 is FINOS Category B, approved for font use
+          # - See: https://opensource.org/licenses/OFL-1.1
+          #
+          # Dual-licensed packages that pass (one allowed license):
+          # - node-forge: (BSD-3-Clause OR GPL-2.0) - BSD-3-Clause is allowed
+          # - dompurify: (MPL-2.0 OR Apache-2.0) - Apache-2.0 is allowed
