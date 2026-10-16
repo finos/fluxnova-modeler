@@ -1,5 +1,8 @@
 name: ASSIGN_MILESTONE
 
+permissions:
+  contents: read
+
 on:
   workflow_dispatch:
 #  issues:
@@ -29,6 +32,8 @@ jobs:
     runs-on: ubuntu-latest
     name: Assign Milestone
     needs: check_permissions
+    permissions:
+      issues: write
     if: |
       needs.check_permissions.outputs.permission == 'admin' ||
       needs.check_permissions.outputs.permission == 'write'
