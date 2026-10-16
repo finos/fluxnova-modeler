@@ -16,7 +16,7 @@ jobs:
     steps:
     - id: create_release_issue
       name: Create new Release Issue
-      uses: bpmn-io/actions/release-issue@latest
+      uses: bpmn-io/actions/release-issue@fbdce57bef1b22a35d2ebf92ac87a5e33b6f8461 # latest
       with:
         template-path: 'docs/.project/RELEASE_TEMPLATE.md'
         package-path: 'app/package.json'
@@ -60,7 +60,7 @@ jobs:
     steps:
     - name: Import Secrets
       id: secrets
-      uses: hashicorp/vault-action@v3.0.0
+      uses: hashicorp/vault-action@d1720f055e0635fd932a1d2a48f87a666a57906c # v3.0.0
       with:
         url: ${{ secrets.VAULT_ADDR }}
         method: approle
@@ -90,7 +90,7 @@ jobs:
     steps:
     - name: Import Secrets
       id: secrets
-      uses: hashicorp/vault-action@v3.0.0
+      uses: hashicorp/vault-action@d1720f055e0635fd932a1d2a48f87a666a57906c # v3.0.0
       with:
         url: ${{ secrets.VAULT_ADDR }}
         method: approle
@@ -101,7 +101,7 @@ jobs:
           secret/data/products/desktop-modeler/ci/slack_integration SLACK_CHANNEL_ID;
           secret/data/products/desktop-modeler/ci/slack_integration SLACK_BOT_TOKEN;
     - name: Post to a Slack channel
-      uses: slackapi/slack-github-action@v2
+      uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a # v2
       with:
         method: chat.postMessage
         token: ${{ steps.secrets.outputs.SLACK_BOT_TOKEN }}
