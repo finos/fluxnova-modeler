@@ -4,7 +4,15 @@ on:
   push:
     tags:
       - 'v*'
+
+permissions:
+  contents: read
+
 jobs:
+  license-check:
+    name: License Check
+    uses: ./.github/workflows/license-scanning.yml
+
   pre_release:
     name: Prepare release
     runs-on: ubuntu-latest
@@ -30,7 +38,7 @@ jobs:
 
   build_release:
     name: Build release
-    needs: pre_release
+    needs: [pre_release, license-check]
     strategy:
       matrix:
         os: [ ubuntu-latest, macos-latest, windows-2022 ]
