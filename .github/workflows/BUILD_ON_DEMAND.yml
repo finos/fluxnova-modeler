@@ -1,4 +1,8 @@
 name: BUILD_ON_DEMAND
+
+permissions:
+  contents: read
+
 on:
   workflow_dispatch:
     inputs:
