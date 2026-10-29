@@ -1,5 +1,8 @@
 name: ADD_TO_PROJECT
 
+permissions:
+  contents: read
+
 on:
   workflow_dispatch:
 #  issues:

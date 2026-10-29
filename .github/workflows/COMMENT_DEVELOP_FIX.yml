@@ -9,11 +9,14 @@ on:
 #      - opened
 
 permissions:
-  pull-requests: write
+  contents: read
+
 jobs:
   comment:
     name: Comment on fix to develop
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
     steps:
       - name: Check for fix commits
         env:
