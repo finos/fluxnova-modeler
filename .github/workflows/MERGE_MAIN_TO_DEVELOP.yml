@@ -1,4 +1,8 @@
 name: MERGE_MAIN_TO_DEVELOP
+
+permissions:
+  contents: read
+
 on:
   workflow_dispatch:
 # push:
