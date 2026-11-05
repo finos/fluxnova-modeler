@@ -29,7 +29,7 @@ describe('preload', function() {
   });
 
 
-  describe('backend#send', function() {
+  describe('backend#send (general)', function() {
 
     it('should throw error when an event outside of allowed list is sent', function() {
 
@@ -208,7 +208,7 @@ describe('preload', function() {
   });
 
 
-  describe('backend#send', function() {
+  describe('backend#send (OIDC events)', function() {
 
     [
       'oidc:getToken',
