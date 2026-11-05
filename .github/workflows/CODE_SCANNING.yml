@@ -1,5 +1,8 @@
 name: CODE_SCANNING
 
+permissions:
+  contents: read
+
 on:
   workflow_dispatch:
 #  push:

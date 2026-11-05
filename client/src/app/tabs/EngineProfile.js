@@ -123,7 +123,10 @@ function EditableVersionSection(props) {
   const [ engineProfile, setEngineProfile ] = useState(_engineProfile);
 
   const handleVersionChanged = event => {
-    const executionPlatformVersion = toSemver(event.target.value);
+    const selectedMinorVersion = event.target.value;
+    const executionPlatformVersion = engineProfileVersions.find(
+      version => toSemverMinor(version) === selectedMinorVersion
+    );
 
     setEngineProfile({
       executionPlatform: engineProfile.executionPlatform,

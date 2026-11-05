@@ -11,6 +11,8 @@ jobs:
     if: github.event.pull_request.merged == true
     name: Create issue
     runs-on: ubuntu-latest
+    permissions:
+      issues: write
     steps:
       - run: gh issue create --title "$ISSUE_TITLE" --body "$ISSUE_BODY" --label "ready" --repo $GITHUB_REPOSITORY
         env:

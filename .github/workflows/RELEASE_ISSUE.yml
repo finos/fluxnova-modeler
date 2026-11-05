@@ -1,4 +1,8 @@
 name: RELEASE_ISSUE
+
+permissions:
+  contents: read
+
 on:
   workflow_dispatch:
 #  issues:
@@ -7,6 +11,8 @@ jobs:
   create_release_issue:
     runs-on: ubuntu-latest
     name: Create new Release Issue
+    permissions:
+      issues: write
     if: |
       contains(github.event.issue.labels.*.name, 'release') &&
       github.event.action == 'closed'
@@ -26,6 +32,8 @@ jobs:
     needs: create_release_issue
     if: github.event.issue.milestone
     runs-on: ubuntu-latest
+    permissions:
+      issues: write
     steps:
       - name: Get current Milestone
         id: getMilestone

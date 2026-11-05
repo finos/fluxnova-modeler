@@ -1,5 +1,8 @@
 name: CREATE_NEW_MILESTONE
 
+permissions:
+  contents: read
+
 on:
   workflow_dispatch:
 #  milestone:
@@ -9,6 +12,8 @@ jobs:
   create_milestone:
     runs-on: ubuntu-latest
     name: Create new Milestone
+    permissions:
+      issues: write
     if: startsWith(github.event.milestone.title, 'M')
     steps:
       - name: Get new Milestone Title

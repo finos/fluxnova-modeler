@@ -248,7 +248,7 @@ describe('<EngineProfile>', function() {
       const result = getDefaultVersion(ENGINES.FLUXNOVA);
 
       // then
-      expect(result).to.equal('3.1.0');
+      expect(result).to.equal('3.1.1');
     });
 
   });
