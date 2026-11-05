@@ -18,7 +18,6 @@ import Flags, {
   PLATFORM_ENGINE_VERSION,
   DISABLE_HTTL_HINT,
   DEFAULT_HTTL,
-  DISABLE_RPA,
   FLUXNOVA_ENGINE_VERSION
 } from '../../util/Flags';
 
@@ -205,10 +204,6 @@ describe('TabsProvider', function() {
     it('should replace version placeholder with actual latest version (BPMN)', function() {
 
       // given
-      Flags.init({
-        [DISABLE_RPA]: false
-      });
-
       const tabsProvider = new TabsProvider();
 
       const expectedPlatformVersion = getLatestStablePlatformVersion(ENGINES.FLUXNOVA);
@@ -412,8 +407,7 @@ describe('TabsProvider', function() {
 
     // given
     Flags.init({
-      [DISABLE_CMMN]: false,
-      [DISABLE_RPA]: false
+      [DISABLE_CMMN]: false
     });
 
     const tabsProvider = new TabsProvider();
@@ -645,8 +639,7 @@ describe('TabsProvider', function() {
 
     // given
     Flags.init({
-      [DISABLE_CMMN]: false,
-      [DISABLE_RPA]: false
+      [DISABLE_CMMN]: false
     });
 
     const tabsProvider = new TabsProvider();
@@ -682,8 +675,7 @@ describe('TabsProvider', function() {
 
       // given
       Flags.init({
-        [DISABLE_CMMN]: false,
-        [DISABLE_RPA]: false
+        [DISABLE_CMMN]: false
       });
       const tabsProvider = new TabsProvider();
 
@@ -840,18 +832,25 @@ describe('TabsProvider', function() {
     });
 
 
-    it('should disable RPA', function() {
+    it('should not register RPA providers from plugins', function() {
 
       // given
-      Flags.init({
-        [DISABLE_RPA]: true
-      });
-
-      // when
-      const tabsProvider = new TabsProvider();
+      const tabsProvider = new TabsProvider([ {
+        rpa: {
+          name: 'RPA',
+          extensions: [ 'rpa' ],
+          canOpen() {
+            return true;
+          },
+          getComponent() {
+            return 'RPA';
+          }
+        }
+      } ]);
 
       // then
       expect(tabsProvider.hasProvider('rpa')).to.be.false;
+      expect(tabsProvider.getProvider('rpa').getComponent()).to.be.null;
     });
 
 
@@ -920,8 +919,7 @@ describe('TabsProvider', function() {
 
     beforeEach(function() {
       Flags.init({
-        [DISABLE_CMMN]: false,
-        [DISABLE_RPA]: false
+        [DISABLE_CMMN]: false
       });
 
       tabsProvider = new TabsProvider();

@@ -84,7 +84,7 @@ module.exports = {
             use: 'react-svg-loader'
           },
           {
-            test: /\.(bpmn|cmmn|dmn|form|rpa)$/,
+            test: /\.(bpmn|cmmn|dmn|form)$/,
             type: 'asset/source'
           },
           {

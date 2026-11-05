@@ -52,8 +52,6 @@ export const FLUXNOVA_ENGINE_VERSION = 'fluxnova-engine-version';
 export const DISABLE_HTTL_HINT = 'disable-httl-hint';
 export const DEFAULT_HTTL = 'default-httl';
 export const ENABLE_NEW_CONTEXT_PAD = 'enable-new-context-pad';
-export const DISABLE_RPA = 'disable-rpa';
-
 export const DEFAULTS = {
   DEFAULT_HTTL: 30
 };
