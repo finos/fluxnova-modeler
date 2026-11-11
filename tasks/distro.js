@@ -26,6 +26,11 @@ const {
   'on-demand': onDemand
 } = argv;
 
+if (argv.ia32) {
+  console.error('ia32 architecture is no longer supported (dropped in Electron 44)');
+  process.exit(1);
+}
+
 console.log('PUBLISH:', typeof publish);
 
 // in case of --nightly, update all package versions to the

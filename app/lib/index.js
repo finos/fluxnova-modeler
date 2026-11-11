@@ -209,12 +209,16 @@ renderer.on('dialog:open-file-explorer', function(options, done) {
 
 // clipboard ///////////
 
-renderer.on('system-clipboard:write-text', function(options, done) {
+renderer.on('system-clipboard:write-text', async function(options, done) {
   const { text } = options;
 
-  clipboardWriteText(text);
+  try {
+    await clipboardWriteText(text);
 
-  done(null, undefined);
+    done(null, undefined);
+  } catch (err) {
+    done(err);
+  }
 });
 
 // filesystem //////////
