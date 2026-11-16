@@ -50,7 +50,6 @@ import Flags, {
   DISABLE_CMMN,
   DISABLE_HTTL_HINT,
   DEFAULT_HTTL,
-  DISABLE_RPA,
   DEFAULTS
 } from '../util/Flags';
 
@@ -265,6 +264,8 @@ export default class TabsProvider {
       };
     });
 
+    delete this.providers.rpa;
+
     this.providersByFileType = Object.entries(this.providers).reduce((acc, [ key, provider ]) => {
       const { extensions } = provider;
       if (!extensions) {
@@ -283,12 +284,10 @@ export default class TabsProvider {
       this.providersByFileType.bpmn = this.providersByFileType.bpmn.filter(p => p !== this.providers['cloud-bpmn']);
       this.providersByFileType.dmn = this.providersByFileType.dmn.filter(p => p !== this.providers['cloud-dmn']);
       this.providersByFileType.form = this.providersByFileType.form.filter(p => p !== this.providers['cloud-form']);
-      this.providersByFileType.rpa = [];
 
       delete this.providers['cloud-bpmn'];
       delete this.providers['cloud-dmn'];
       delete this.providers['cloud-form'];
-      delete this.providers['rpa'];
     }
 
     if (Flags.get(DISABLE_PLATFORM)) {
@@ -321,10 +320,6 @@ export default class TabsProvider {
       delete this.providersByFileType.form;
     }
 
-    if (Flags.get(DISABLE_RPA, true)) {
-      delete this.providers.rpa;
-      delete this.providersByFileType.rpa;
-    }
   }
 
   getProviderNames() {
