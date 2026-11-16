@@ -145,7 +145,7 @@ module.exports = function(karma) {
                 use: 'react-svg-loader'
               },
               {
-                test: /\.(bpmn|cmmn|dmn|xml|png|svg|form|rpa)$/,
+                test: /\.(bpmn|cmmn|dmn|xml|png|svg|form)$/,
                 type: 'asset/source'
               }
             ]
