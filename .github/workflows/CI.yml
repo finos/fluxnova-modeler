@@ -1,17 +1,17 @@
 name: CI
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
-      - develop
-  pull_request:
-    branches:
-      - main
-      - develop
+  #push:
+    #branches:
+     # - main
+     # - develop
+  #pull_request:
+    #branches:
+     # - main
+      #- develop
 
-permissions:
-  contents: read
+#permissions:
+  #contents: read
 
 jobs:
   build:

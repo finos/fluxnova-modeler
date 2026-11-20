@@ -6,6 +6,7 @@ All notable changes to the [Fluxnova Modeler](https://github.com/finos/fluxnova-
 
 **\_Note:** Yet to be released changes appear here.\_
 
+- Breaking: Electron 44 drops support for Windows ia32 and macOS 12 (Monterey). Supported macOS versions are now macOS 13 (Ventura) and newer.
 
 ## 1.3.3
 
